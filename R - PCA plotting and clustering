@@ -1,0 +1,370 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/PCA3/")
+
+# Read the eigenvectors
+#mitoAll.eigenvecs <- read.table("mitoAll.eigenvec", header=FALSE)
+#chloroAll.eigenvecs <- read.table("chloroAll.eigenvec", header=FALSE)
+mitoHaploidAll.eigenvecs <- read.table("mitoHapAll.eigenvec", header=FALSE)
+chloroHaploidAll.eigenvecs <- read.table("chloroHapAll.eigenvec", header=FALSE)
+mitoHaploidAll.eigenvals <- read.table("mitoHapAll.eigenval", header=FALSE)
+chloroHaploidAll.eigenvals <- read.table("chloroHapAll.eigenval", header=FALSE)
+
+chloroHaploidNoOutgr.eigenvecs <- read.table("chloroHapNOutgroups.eigenvec", header=FALSE)
+mitoHaploidNoOutgr.eigenvecs <- read.table("mitoHapNOutgroups.eigenvec", header=FALSE)
+
+# Optionally, you can add column names to the eigenvecs data frame for clarity
+#colnames(mitoAll.eigenvecs) <- c("FID", "IID", paste0("PC", 1:(ncol(mitoAll.eigenvecs)-2)))
+#colnames(chloroAll.eigenvecs) <- c("FID", "IID", paste0("PC", 1:(ncol(mitoAll.eigenvecs)-2)))
+colnames(mitoHaploidAll.eigenvecs) <- c("FID", "IID", paste0("PC", 1:(ncol(mitoHaploidAll.eigenvecs)-2)))
+colnames(chloroHaploidAll.eigenvecs) <- c("FID", "IID", paste0("PC", 1:(ncol(chloroHaploidAll.eigenvecs)-2)))
+colnames(mitoHaploidNoOutgr.eigenvecs) <- c("FID", "IID", paste0("PC", 1:(ncol(mitoHaploidNoOutgr.eigenvecs)-2)))
+colnames(chloroHaploidNoOutgr.eigenvecs) <- c("FID", "IID", paste0("PC", 1:(ncol(chloroHaploidNoOutgr.eigenvecs)-2)))
+
+
+library(readxl)
+RagweedSamplesSheet <- read_excel("RagweedSamplesSheet.xlsx")
+
+
+```
+
+
+```{r Merging}
+
+#Merging ALL
+#masterMitoAllPCA =  merge(mitoAll.eigenvecs, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+
+#na_MITOspecies_samples <- masterMitoAllPCA[is.na(masterMitoAllPCA$Species), ]
+
+#na_MITOspecies_samples
+
+#masterMitoAllPCA$Species[is.na(masterMitoAllPCA$Species)] <- "A. artemisiifolia"
+
+masterHaploidMitoAllPCA =  merge(mitoHaploidAll.eigenvecs, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+#masterHaploidMitoAllPCA$Species[is.na(masterHaploidMitoAllPCA$Species)] <- "A. artemisiifolia"
+
+#masterChloroAllPCA =  merge(chloroAll.eigenvecs, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+
+#na_CHLOROspecies_samples <- masterChloroAllPCA[is.na(masterChloroAllPCA$Species), ]
+
+#na_CHLOROspecies_samples
+#write.csv(na_CHLOROspecies_samples, file = "C:/Users/test/Documents/R vaje/Organeli Žvrklje/PCA1/na_CHLOROspecies_samples.csv", row.names = FALSE)
+
+#masterChloroAllPCA$Species[is.na(masterChloroAllPCA$Species)] <- "A. artemisiifolia"
+
+
+
+masterHaploidChloroAllPCA =  merge(chloroHaploidAll.eigenvecs, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+#masterHaploidChloroAllPCA$Species[is.na(masterHaploidChloroAllPCA$Species)] <- "A. artemisiifolia"
+
+#Merging without outgroups
+
+masterHaploidChloroNoOutgrPCA =  merge(chloroHaploidNoOutgr.eigenvecs, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+#masterHaploidChloroNoOutgrPCA$Species[is.na(masterHaploidChloroNoOutgrPCA$Species)] <- "A. artemisiifolia"
+
+masterHaploidMitoNoOutgrPCA =  merge(mitoHaploidNoOutgr.eigenvecs, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+#masterHaploidMitoNoOutgrPCA$Species[is.na(masterHaploidMitoNoOutgrPCA$Species)] <- "A. artemisiifolia"
+
+
+
+```
+
+```{r PERCANTAGES OF VAIATION PCS}
+
+
+mitoHaploidAll.eigenvals_variance <- sum(mitoHaploidAll.eigenvals)
+
+# Calculate the percentage of variance explained by each PC
+mitoHaploidAll.eigenvals_percentage <- (mitoHaploidAll.eigenvals / mitoHaploidAll.eigenvals_variance) * 100
+
+# Extract percentages for PC1 and PC2
+mitoHaploidAll.eigenvals.pc1_variance <- round(mitoHaploidAll.eigenvals_percentage[[1]][1], 2)  
+mitoHaploidAll.eigenvals.pc2_variance <- round(mitoHaploidAll.eigenvals_percentage[[1]][2], 2)  
+
+# Calculate the total variance
+chloroHaploidAll.eigenvals_variance <- sum(chloroHaploidAll.eigenvals)
+
+# Calculate the percentage of variance explained by each PC
+chloroHaploidAll.eigenvals_percentage <- (chloroHaploidAll.eigenvals / chloroHaploidAll.eigenvals_variance) * 100
+
+# Extract percentages for PC1 and PC2
+chloroHaploidAll.eigenvals.pc1_variance <- round(chloroHaploidAll.eigenvals_percentage[[1]][1], 2)  
+chloroHaploidAll.eigenvals.pc2_variance <- round(chloroHaploidAll.eigenvals_percentage[[1]][2], 2)  
+
+```
+
+
+
+```#{r "PCA of All Mitochondrial Diploid Data"}
+
+library(ggplot2)
+library(ggrepel)
+
+masterMitoAllPCA_plot <- ggplot(masterMitoAllPCA, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point(alpha = 0.3) +
+  geom_point(data = subset(masterMitoAllPCA, Species == "Outgroups"), 
+            aes(color = Species), alpha = 1, size = 1.5) + 
+  geom_text_repel(data = subset(masterMitoAllPCA, Species == "Outgroups"), 
+            aes(label = FID),  size = 3, box.padding = 0.5, segment.color = "grey50", max.overlaps = Inf) +
+  labs(title = "PCA of All Mitochondrial Diploid Data",
+       x = paste0("PC1"),
+       y = paste0("PC2")) +
+  theme_minimal() #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1))
+
+print(masterMitoAllPCA_plot)
+
+```
+
+
+```{r "PCA of All Mitochondrial Haploid Data"}
+
+library(ggplot2)
+library(ggrepel)
+
+masterHaploidMitoAllPCA_plot <- ggplot(masterHaploidMitoAllPCA, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point(alpha = 0.3) +
+  geom_point(data = subset(masterHaploidMitoAllPCA, Species == "Outgroups"), 
+            aes(color = Species), alpha = 1, size = 1.5) + 
+  geom_text_repel(data = subset(masterHaploidMitoAllPCA, Species == "Outgroups"), 
+            aes(label = FID),  size = 2, box.padding = 0.5, segment.color = "grey50", max.overlaps = Inf) +
+  
+  #geom_text_repel(aes(label = FID), size = 2, box.padding = 0.3, segment.color = "grey50") +
+  labs(title = "PCA of All Mitochondrial Samples Including Outgroups",
+       x = paste0("PC1"),
+       y = paste0("PC2")) +
+  theme_minimal() #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1)) 
+
+print(masterHaploidMitoAllPCA_plot)
+ggsave("masterMitoAllPCA_plot.jpeg", plot = masterHaploidMitoAllPCA_plot, width = 8, height = 6)
+
+
+LABELEDmasterHaploidMitoAllPCA_plot <- ggplot(masterHaploidMitoAllPCA, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point(alpha = 0.3) +
+  
+  # Highlight Outgroups with points and labels
+  geom_point(data = subset(masterHaploidMitoAllPCA, Species == "Outgroups"), 
+             aes(color = Species), alpha = 1, size = 1.5) + 
+  geom_text_repel(data = subset(masterHaploidMitoAllPCA, Species == "Outgroups"), 
+                  aes(label = FID), size = 2, box.padding = 0.5, segment.color = "grey50", max.overlaps = Inf) +
+  
+  # Highlight A. artemisiifolia subset with labels
+  #geom_point(data = subset(masterHaploidMitoAllPCA, Species == "A.artemisiifolia"), 
+          #   aes(color = Species), alpha = 1, size = 1.5) +
+  geom_text_repel(data = subset(masterHaploidMitoAllPCA, Species == "A. artemisiifolia"), 
+                  aes(label = FID), size = 2, box.padding = 0.3, segment.color = "grey50", max.overlaps = 3) +
+  
+  # Add plot labels and theme
+  labs(title = "PCA of All Mitochondrial Samples Including Outgroups",
+       x = paste0("PC1(", mitoHaploidAll.eigenvals.pc1_variance, "%)"),
+       y = paste0("PC2(", mitoHaploidAll.eigenvals.pc2_variance, "%)")) +
+  theme_minimal()
+
+print(LABELEDmasterHaploidMitoAllPCA_plot)
+ggsave("LABELEDmasterMitoAllPCA_plot.jpeg", plot = LABELEDmasterHaploidMitoAllPCA_plot, width = 8, height = 6)
+
+```
+
+
+```#{r "PCA of All Chloroplast Diploid Data"}
+
+library(ggplot2)
+library(ggrepel)
+
+masterChloroAllPCA_plot <- ggplot(masterChloroAllPCA, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point(alpha = 0.3) +
+  geom_point(data = subset(masterChloroAllPCA, Species == "Outgroups"), 
+            aes(color = Species), alpha = 1, size = 1.5) + 
+  geom_text_repel(data = subset(masterChloroAllPCA, Species == "Outgroups"), 
+            aes(label = FID),  size = 3, box.padding = 0.5, segment.color = "grey50", max.overlaps = Inf) +
+  labs(title = "PCA of All Chloroplast Diploid Data",
+       x = paste0("PC1"),
+       y = paste0("PC2")) +
+  theme_minimal() #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1))
+
+print(masterChloroAllPCA_plot)
+
+```
+```{r "PCA of All Chloroplast Haploid Data"}
+
+library(ggplot2)
+library(ggrepel)
+
+masterHaploidChloroAllPCA_plot <- ggplot(masterHaploidChloroAllPCA, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point(alpha = 0.3) +
+  geom_point(data = subset(masterHaploidChloroAllPCA, Species == "Outgroups"), 
+            aes(color = Species), alpha = 1, size = 1.5) + 
+  geom_text_repel(data = subset(masterHaploidChloroAllPCA, Species == "Outgroups"), 
+            aes(label = FID),  size = 3, box.padding = 0.5, segment.color = "grey50", max.overlaps = Inf) +
+  labs(title = "PCA of All Chloroplast Samples Including Outgroups",
+       x = paste0("PC1(", chloroHaploidAll.eigenvals.pc1_variance, "%)"),
+       y = paste0("PC2(", chloroHaploidAll.eigenvals.pc2_variance, "%)")) +
+  theme_minimal() #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1))
+
+print(masterHaploidChloroAllPCA_plot)
+ggsave("masterHaploidChloroAllPCA_plot.jpeg", plot = masterHaploidChloroAllPCA_plot, width = 8, height = 6)
+
+```
+
+
+```{r "PCA of Chloroplast Haploid Data, Outgroups removed"}
+
+library(ggplot2)
+library(ggrepel)
+
+masterHaploidChloroNoOutgrPCA_plot <- ggplot(masterHaploidChloroNoOutgrPCA, aes(x = PC1, y = PC2)) +
+  geom_point(alpha = 0.05, size = 2) +
+  #geom_text_repel(data = subset(masterHaploidChloroNoOutgrPCA), 
+            #aes(label = FID),  size = 3, box.padding = 0.5, segment.color = "grey50", max.overlaps = 40) +
+  labs(title = "PCA of Chloroplast Haploid Data, Outgroups removed",
+       x = paste0("PC1"),
+       y = paste0("PC2")) +
+  theme_minimal() #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1))
+
+print(masterHaploidChloroNoOutgrPCA_plot)
+ggsave("masterHaploidChloroNoOutgrPCA_plot.jpeg", plot = masterHaploidChloroNoOutgrPCA_plot, width = 8, height = 6)
+
+```
+
+
+```{r "PCA of Mitochondrial Haploid Data, Outgroups removed"}
+
+library(ggplot2)
+library(ggrepel)
+
+masterHaploidMitoNoOutgrPCA_plot <- ggplot(masterHaploidMitoNoOutgrPCA, aes(x = PC1, y = PC2)) +
+  geom_point(alpha = 0.2, size = 2) +
+  #geom_text_repel(data = subset(masterHaploidMitoNoOutgrPCA), 
+         #   aes(label = FID),  size = 3, box.padding = 0.5, segment.color = "grey50", max.overlaps = 60) +
+  labs(title = "PCA of Mitochondrial Haploid Data, Outgroups removed",
+       x = paste0("PC1"),
+       y = paste0("PC2")) +
+  theme_minimal() #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1))
+
+print(masterHaploidMitoNoOutgrPCA_plot)
+ggsave("masterHaploidMitoNoOutgrPCA_plot.jpeg", plot = masterHaploidMitoNoOutgrPCA_plot, width = 8, height = 6)
+```
+
+```{r "PDF"}
+
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+library(gridExtra)
+
+pdf(file = "PCAsOUTGR.pdf",
+  width = 7.5,
+  height = 10.5,
+  useDingbats=FALSE)
+grid.arrange(masterHaploidChloroAllPCA_plot, masterHaploidMitoAllPCA_plot)
+
+dev.off()
+
+```
+
+---
+PCA SEPARATE RANGES
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/PCA_NA/")
+
+# Read the eigenvectors
+
+MitoHapSNPs.NA.eigenvec <- read.table("MitoHapSNPs.NA.eigenvec", header=FALSE)
+ChloroHapSNPs.NA.eigenvec <- read.table("ChloroHapSNPs.NA.eigenvec", header=FALSE)
+MitoHapSNPs.EU.eigenvec <- read.table("MitoHapSNPs.EU.eigenvec", header=FALSE)
+ChloroHapSNPs.EU.eigenvec <- read.table("ChloroHapSNPs.EU.eigenvec", header=FALSE)
+MitoHapSNPs.AUS.eigenvec <- read.table("MitoHapSNPs.AUS.eigenvec", header=FALSE)
+ChloroHapSNPs.AUS.eigenvec <- read.table("ChloroHapSNPs.AUS.eigenvec", header=FALSE)
+# Optionally, you can add column names to the eigenvecs data frame for clarity
+
+colnames(MitoHapSNPs.NA.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.NA.eigenvec)-2)))
+colnames(ChloroHapSNPs.NA.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.NA.eigenvec)-2)))
+colnames(MitoHapSNPs.EU.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.EU.eigenvec)-2)))
+colnames(ChloroHapSNPs.EU.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.EU.eigenvec)-2)))
+colnames(MitoHapSNPs.AUS.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.AUS.eigenvec)-2)))
+colnames(ChloroHapSNPs.AUS.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.AUS.eigenvec)-2)))
+
+library(readxl)
+RagweedSamplesSheet <- read_excel("RagweedSamplesSheet.xlsx")
+
+
+```
+
+```{r MERGING}
+
+masterHaploidChloroNAPCA =  merge(ChloroHapSNPs.NA.eigenvec, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+masterHaploidMitoNAPCA =  merge(MitoHapSNPs.NA.eigenvec, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+
+masterHaploidChloroEUPCA =  merge(ChloroHapSNPs.EU.eigenvec, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+masterHaploidMitoEUPCA =  merge(MitoHapSNPs.EU.eigenvec, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+
+masterHaploidChloroAUSPCA =  merge(ChloroHapSNPs.AUS.eigenvec, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+masterHaploidMitoAUSPCA =  merge(MitoHapSNPs.AUS.eigenvec, RagweedSamplesSheet, by.x = "FID", by.y = "sample ID", all.x = T, all.y = T)
+
+
+```
+
+```{r "PCA of NA Mitochondrial Haploid Data, Outgroups removed"}
+library(ggplot2)
+library(ggrepel)
+
+masterHaploidMitoNAPCA_plot <- ggplot(masterHaploidMitoNAPCA, aes(x = PC1, y = PC2, colour = cluster )) +
+  geom_jitter(alpha = 0.6, width = 0.01, height = 0.01) +
+  #geom_text_repel(data = subset(masterHaploidMitoNAPCA), 
+         #   aes(label = FID),  size = 3, box.padding = 0.5, segment.color = "grey50", max.overlaps = 60) +
+  labs(title = "PCA of Mitochondrial Haploid Data, Outgroups removed",
+       x = paste0("PC1"),
+       y = paste0("PC2")) +
+  theme_minimal()+
+  theme(legend.position = "none") #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1))
+
+print(masterHaploidMitoNAPCA_plot)
+#ggsave("masterHaploidMitoNAPCA_plot.jpeg", plot = masterHaploidMitoNAPCA_plot, width = 8, height = 6)
+
+masterHaploidMitoEUPCA_plot <- ggplot(masterHaploidMitoEUPCA, aes(x = PC1, y = PC2, colour = cluster )) +
+  geom_jitter(alpha = 0.6, width = 0.01, height = 0.01) +
+  #geom_text_repel(data = subset(masterHaploidMitoEUPCA), 
+         #   aes(label = FID),  size = 3, box.padding = 0.5, segment.color = "grey50", max.overlaps = 60) +
+  labs(title = "PCA of EU Mitochondrial Haploid Data, Outgroups removed",
+       x = paste0("PC1"),
+       y = paste0("PC2")) +
+  theme_minimal()+
+  theme(legend.position = "none") #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1))
+
+print(masterHaploidMitoEUPCA_plot)
+#ggsave("masterHaploidMitoEUPCA_plot.jpeg", plot = masterHaploidMitoEUPCA_plot, width = 8, height = 6)
+
+masterHaploidMitoAUSPCA_plot <- ggplot(masterHaploidMitoAUSPCA, aes(x = PC1, y = PC2, colour = cluster )) +
+  geom_jitter(alpha = 0.6, width = 0.01, height = 0.01) +
+  #geom_text_repel(data = subset(masterHaploidMitoAUSPCA), 
+         #   aes(label = FID),  size = 3, box.padding = 0.5, segment.color = "grey50", max.overlaps = 60) +
+  labs(title = "PCA of AUS Mitochondrial Haploid Data, Outgroups removed",
+       x = paste0("PC1"),
+       y = paste0("PC2")) +
+  theme_minimal()+
+  theme(legend.position = "none") #+
+  #xlim(min(-0.05), max(0.2)) +
+  #ylim(min(-0.05), max(0.1))
+
+print(masterHaploidMitoAUSPCA_plot)
+#ggsave("masterHaploidMitoAUSPCA_plot.jpeg", plot = masterHaploidMitoAUSPCA_plot, width = 8, height = 6)
+```
