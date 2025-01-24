@@ -1,0 +1,462 @@
+---
+title: "Networks"
+author: "Vid"
+date: "2024-10-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/Networks/")
+
+library(readxl)
+RagweedSamplesSheet <- read_excel("RagweedSamplesSheet.xlsx")
+ChloroBranches <- read_excel("ChloroBranches.xlsx")
+MitoBranches <- read_excel("MitoBranches.xlsx")
+
+
+
+library(ggtree)
+library(ggplot2)
+library(ape)
+
+library(RColorBrewer)
+
+
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+library(dplyr)
+library(tidyr)
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+
+```
+
+
+```{r}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/Fasta in Drevesa/")
+Chloro_tree_1 <- read.tree("Chloro_phylo_tree.raxml.bestTreeCollapsed")
+Chloro_tree_1 <- root(Chloro_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+
+Mito_tree_1 <- read.tree("Mito_phylo_tree.raxml.bestTree")
+Mito_tree_1 <- root(Mito_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+
+```
+```{r Tree metadata}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/Networks/")
+
+
+Chloro1_tip_metadata_Network <- data.frame(
+  label = Chloro_tree_1$tip.label, # Tree tip labels
+  
+  cluster = RagweedSamplesSheet$cluster[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  # Match tip labels to FID in the data
+  range = RagweedSamplesSheet$range[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  
+  population = RagweedSamplesSheet$population[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  
+'collection latitude' = RagweedSamplesSheet$'collection latitude'[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],
+  'collection longitude' = RagweedSamplesSheet$'collection longitude'[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],
+
+  'Network branch' = ChloroBranches$'Network Branch'[match(Chloro_tree_1$tip.label,ChloroBranches$MLG)]
+  
+  )
+
+
+Mito1_tip_metadata_Network <- data.frame(
+  label = Mito_tree_1$tip.label, # Tree tip labels
+  
+  cluster = RagweedSamplesSheet$cluster[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  # Match tip labels to FID in the data
+  range = RagweedSamplesSheet$range[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  
+  population = RagweedSamplesSheet$population[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  'collection latitude' = RagweedSamplesSheet$'collection latitude'[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],
+  'collection longitude' = RagweedSamplesSheet$'collection longitude'[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],
+  
+  
+  'Network branch' = MitoBranches$'Network Branch'[match(Mito_tree_1$tip.label,MitoBranches$MLG)]
+  
+  )
+
+```
+
+```{r Chloro Tree Networskss}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+NC <- ggtree(Chloro_tree_1) %<+% Chloro1_tip_metadata_Network +  
+  geom_tiplab(aes(color = Network.branch)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+    scale_color_manual(values = c("C" = "#E41A1C",   # Red for MNAm1
+                                "A" = "#377EB8",   # Blue for MNAm2
+                                "D" = "#4DAF4A",   # Green for MNAm3
+                                "E" = "#FF7F00",   # Blue for MNAm2
+                                "F" = "#F781BF",   # Green for MNAm3
+                                "B" = "#984EA3","H" = "black",
+                                "G" = "#B2DF8A"
+                                 )) +
+  
+  #xlim(0, max(Chloro_tree_1$edge.length) * 0.5)+
+  labs(title = "ML tree of Haploid Chloroplast Fasta, Network branches coloured", color = "Network branch" ) +
+theme_tree2(legend.title = element_text(size = 22), legend.text = element_text(size = 22)) +
+guides(color = guide_legend(override.aes = list(size = 15)))
+
+
+print(NC)
+ggsave("Chloro_tree_Networks.png", plot = NC, width = 30, height = 60, limitsize = FALSE)
+
+```
+
+```{r Mito Tree Networskss}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+NM <- ggtree(Mito_tree_1) %<+% Mito1_tip_metadata_Network +  
+  geom_tiplab(aes(color = Network.branch), size = 6) +  # Use color for 'cluster', shape for 'population', size for 'region'
+    scale_color_manual(values = c("C" = "#E41A1C",   # Red for MNAm1
+                                "F" = "#377EB8",   # Blue for MNAm2
+                                "A" = "#4DAF4A",   # Green for MNAm3
+                                "E" = "#F781BF",   # Blue for MNAm2
+                                "B" = "#FF7F00",   # Green for MNAm3
+                                "D" = "#984EA3",
+                                "G" = "#A65628",
+                                "H" = "black" )) +
+  
+  #xlim(0, max(Mito_tree_1$edge.length) * 0.5)+
+  labs(title = "ML tree of Haploid Mitochondria Fasta, Subnetwork coloured", color = "Subnetwork" ) +
+theme_tree2(legend.title = element_text(size = 22), legend.text = element_text(size = 22)) +
+guides(color = guide_legend(override.aes = list(size = 15)))
+
+
+print(NM)
+ggsave("Mito_tree_Networks.png", plot = NM, width = 30, height = 60, limitsize = FALSE)
+
+```
+
+```{r Network piecharts}
+
+Chloro_Network_summary <- Chloro1_tip_metadata_Network %>%  filter(!is.na(collection.latitude)) %>% filter(!is.na(Network.branch)) %>%
+  group_by(`collection.latitude`, `collection.longitude`, Network.branch) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection.latitude`, `collection.longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Chloro_Network_pie_data <- Chloro_Network_summary %>%
+  pivot_wider(names_from = Network.branch, values_from = proportion, values_fill = 0)
+
+Chloro_Network_pie_data <- Chloro_Network_pie_data %>%
+  rename( latitude = `collection.latitude`, longitude = `collection.longitude`)
+
+
+
+Mito_Network_summary <- Mito1_tip_metadata_Network %>%  filter(!is.na(collection.latitude)) %>% filter(!is.na(Network.branch)) %>%
+  group_by(`collection.latitude`, `collection.longitude`, Network.branch) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection.latitude`, `collection.longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Mito_Network_pie_data <- Mito_Network_summary %>%
+  pivot_wider(names_from = Network.branch, values_from = proportion, values_fill = 0)
+
+Mito_Network_pie_data <- Mito_Network_pie_data %>%
+  rename( latitude = `collection.latitude`, longitude = `collection.longitude`)
+```
+```{r Pie chart plots MITO}
+
+M_Network_colors <- c(
+  "A" = brewer.pal(9, "Set1")[3],  # First color in Set1 palette
+  "C" = brewer.pal(9, "Set1")[1],  # Second color in Set1 palette
+  "F" = brewer.pal(9, "Set1")[2], 
+  "D" = brewer.pal(9, "Set1")[4],
+  "E" = brewer.pal(9, "Set1")[8],
+  "B" = brewer.pal(9, "Set1")[5]
+)
+
+
+Mito_Network_pie_NAdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_Network_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_Network_pie_data)[5:ncol(Mito_Network_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.1, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = M_Network_colors) +
+  labs(title = "Mitochondrial Subnetwork Distribution, North America",
+       x = "Longitude", y = "Latitude", fill = "Subnetwork") +
+  coord_sf(xlim = c(-110, -65), ylim = c(24, 50)) + # Focus on the USA
+  theme_minimal()
+print(Mito_Network_pie_NAdata_plot)
+
+
+Mito_Network_pie_EUdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_Network_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_Network_pie_data)[5:ncol(Mito_Network_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.1, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = M_Network_colors) +
+  labs(title = " Mitochondrial Subnetwork Distribution, Europe",
+       x = "Longitude", y = "Latitude", fill = "Subnetwork") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) + # Focus on the eu
+  theme_minimal()
+print(Mito_Network_pie_EUdata_plot)
+
+
+
+Mito_Network_pie_AUSdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_Network_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_Network_pie_data)[5:ncol(Mito_Network_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.08, 
+                  color = NA) +  # Adjust pie size
+   scale_fill_manual(values = M_Network_colors) +
+  labs(title = "Mitochondrial Subnetwork Distribution, Australia",
+       x = "Longitude", y = "Latitude", fill = "Subnetwork") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + # Focus on the eu
+  theme_minimal()
+print(Mito_Network_pie_AUSdata_plot)
+
+```
+
+```{r Pie chart plots Chloro}
+
+C_Network_colors <- c(
+  "A" = brewer.pal(9, "Set1")[2],  # First color in Set1 palette
+  "B" = brewer.pal(9, "Set1")[4],  # Second color in Set1 palette
+  "C" = brewer.pal(9, "Set1")[1], 
+  "D" = brewer.pal(9, "Set1")[3],
+  "E" = brewer.pal(9, "Set1")[5],
+  "F" = brewer.pal(9, "Set1")[8],
+  "G" = brewer.pal(9, "Paired")[3]
+)
+
+Chloro_Network_pie_NAdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_Network_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_Network_pie_data)[5:11],  # Specify the cluster columns
+                  pie_scale = 0.1, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = C_Network_colors) +
+  labs(title = "Chloroplast Subnetwork Distribution, North America",
+       x = "Longitude", y = "Latitude", fill = "Subnetwork") +
+  coord_sf(xlim = c(-110, -65), ylim = c(24, 50)) + # Focus on the USA
+  theme_minimal()
+print(Chloro_Network_pie_NAdata_plot)
+
+
+Chloro_Network_pie_EUdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_Network_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_Network_pie_data)[5:11],  # Specify the cluster columns
+                  pie_scale = 0.1, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = C_Network_colors) +
+  labs(title = "Chloroplast Subnetwork Distribution, Europe",
+       x = "Longitude", y = "Latitude", fill = "Subnetwork") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) + # Focus on the eu
+  theme_minimal()
+print(Chloro_Network_pie_EUdata_plot)
+
+
+
+Chloro_Network_pie_AUSdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_Network_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_Network_pie_data)[5:ncol(Chloro_Network_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.08, 
+                  color = NA) +  # Adjust pie size
+   scale_fill_manual(values = C_Network_colors) +
+  labs(title = "Chloroplast Subnetwork Distribution, Australia",
+       x = "Longitude", y = "Latitude", fill = "Subnetwork") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + # Focus on the eu
+  theme_minimal()
+print(Chloro_Network_pie_AUSdata_plot)
+
+```
+
+```{r Mito Jitter}
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+
+Jitter_M_Network_NA_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Mito1_tip_metadata_Network, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Network.branch),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  #scale_color_brewer(palette = "Set1") +  # Customize color palette
+  scale_color_manual(values = c("C" = "#E41A1C",   # Red for MNAm1
+                                "F" = "#377EB8",   # Blue for MNAm2
+                                "A" = "#4DAF4A",   # Green for MNAm3
+                                "E" = "#F781BF",   # Blue for MNAm2
+                                "B" = "#FF7F00",   # Green for MNAm3
+                                "D" = "#984EA3",
+                                "G" = "#A65628",
+                                "H" = "black" )) +
+  labs(title = "Distribution of Mitochondrion Subnetworks, North America",
+       x = "Longitude", y = "Latitude", color = "Subnetwork ") +
+  coord_sf(xlim = c(-110, -60), ylim = c(24, 55)) +
+  theme_minimal()
+print(Jitter_M_Network_NA_plot)
+#EU
+
+Jitter_M_Network_EU_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Mito1_tip_metadata_Network, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Network.branch),
+              width = 0.5, height = 0.5, size = 1.5, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_manual(values = c("C" = "#E41A1C",   # Red for MNAm1
+                                "F" = "#377EB8",   # Blue for MNAm2
+                                "A" = "#4DAF4A",   # Green for MNAm3
+                                "E" = "#F781BF",   # Blue for MNAm2
+                                "B" = "#FF7F00",   # Green for MNAm3
+                                "D" = "#984EA3",
+                                "G" = "#A65628",
+                                "H" = "black" )) +  # Customize color palette
+  labs(title = "Distribution of Mitochondrion Subnetworks, Europe",
+       x = "Longitude", y = "Latitude", color = "Subnetwork") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) +
+  theme_minimal()
+print(Jitter_M_Network_EU_plot)
+
+#AUS
+
+Jitter_M_Network_AUS_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Mito1_tip_metadata_Network, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Network.branch),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_manual(values = c("C" = "#E41A1C",   # Red for MNAm1
+                                "F" = "#377EB8",   # Blue for MNAm2
+                                "A" = "#4DAF4A",   # Green for MNAm3
+                                "E" = "#F781BF",   # Blue for MNAm2
+                                "B" = "#FF7F00",   # Green for MNAm3
+                                "D" = "#984EA3",
+                                "G" = "#A65628",
+                                "H" = "black" )) +  # Customize color palette
+  labs(title = "Distribution of Mitochondrion Subnetworks, Australia",
+       x = "Longitude", y = "Latitude", color = "Subnetwork") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + 
+  theme_minimal()
+print(Jitter_M_Network_AUS_plot)
+
+
+```
+
+```{r Chlror Jittter}
+Jitter_C_Network_NA_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Chloro1_tip_metadata_Network, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Network.branch),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+   scale_color_manual(values = c("C" = "#E41A1C",   
+                                "A" = "#377EB8",   
+                                "D" = "#4DAF4A",   
+                                "E" = "#FF7F00",   
+                                "F" = "#F781BF",   
+                                "B" = "#984EA3",
+                                "G" = "#B2DF8A"
+                                 )) +
+  labs(title = "Distribution of Chloroplast Subnetworks, North America",
+       x = "Longitude", y = "Latitude", color = "Subnetwork ") +
+  coord_sf(xlim = c(-110, -60), ylim = c(24, 55)) +
+  theme_minimal()
+print(Jitter_C_Network_NA_plot)
+#EU
+
+Jitter_C_Network_EU_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Chloro1_tip_metadata_Network, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Network.branch),
+              width = 0.5, height = 0.5, size = 1.5, alpha = 0.7) +
+  
+  scale_color_manual(values = c("C" = "#E41A1C",   # Red for MNAm1
+                                "A" = "#377EB8",   # Blue for MNAm2
+                                "D" = "#4DAF4A",   # Green for MNAm3
+                                "E" = "#FF7F00",   # Blue for MNAm2
+                                "F" = "#F781BF",   # Green for MNAm3
+                                "B" = "#984EA3",
+                                "G" = "#B2DF8A"
+                                 )) +  # Customize color palette
+  labs(title = "Distribution of Chloroplast Subnetworks, Europe",
+       x = "Longitude", y = "Latitude", color = "Subnetwork") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) +
+  theme_minimal()
+print(Jitter_C_Network_EU_plot)
+
+#AUS
+
+Jitter_C_Network_AUS_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Chloro1_tip_metadata_Network, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Network.branch),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  
+  scale_color_manual(values = c("C" = "#E41A1C",   # Red for MNAm1
+                                "A" = "#377EB8",   # Blue for MNAm2
+                                "D" = "#4DAF4A",   # Green for MNAm3
+                                "E" = "#FF7F00",   # Blue for MNAm2
+                                "F" = "#F781BF",   # Green for MNAm3
+                                "B" = "#984EA3",
+                                "G" = "#B2DF8A"
+                                 )) +  # Customize color palette
+  labs(title = "Distribution of Chloroplast Subnetworks, Australia",
+       x = "Longitude", y = "Latitude", color = "Subnetwork") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + 
+  theme_minimal()
+print(Jitter_C_Network_AUS_plot)
+
+```
+
+
+
+
+
+```{r "PDF"}
+library(gridExtra)
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+
+pdf(file = "JitterNETWORKSMaps.pdf",
+  width = 16,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Jitter_C_Network_NA_plot, Jitter_M_Network_NA_plot, Jitter_C_Network_EU_plot, Jitter_M_Network_EU_plot, Jitter_C_Network_AUS_plot, Jitter_M_Network_AUS_plot,  nrow = 3)
+dev.off()
+
+```
+
+```{r "PDF"}
+library(gridExtra)
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+
+pdf(file = "PiechartNetworksMaps.pdf",
+  width = 16,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Chloro_Network_pie_NAdata_plot, Mito_Network_pie_NAdata_plot, Chloro_Network_pie_EUdata_plot, Mito_Network_pie_EUdata_plot, Chloro_Network_pie_AUSdata_plot, Mito_Network_pie_AUSdata_plot,  nrow = 3)
+dev.off()
+
+```
