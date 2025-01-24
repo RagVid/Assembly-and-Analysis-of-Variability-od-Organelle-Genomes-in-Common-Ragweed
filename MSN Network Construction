@@ -1,0 +1,236 @@
+$$$$ Kaj sem jaz naredil/What I did $$$$
+
+conda install -c conda-forge r-Cairo
+
+module load miniconda3
+conda activate RRR
+R
+
+$$$$$$$$$$$ CHLORO $$$$$$$$$$$$$$$$$$$$
+
+library(poppr)
+library(ape)
+library(adegenet)
+library(Cairo)
+library(RColorBrewer)
+
+options(device = "png")
+
+
+# Read aligned DNA sequences in FASTA format and convert to genind
+Chloro.dna <- read.dna("Alligned_Cleaned.CHLORO.fasta", format = "fasta")
+Chloro.genind <- DNAbin2genind(Chloro.dna)
+#Convert to genclone object for network construction
+Chloro.genclone <- as.genclone(Chloro.genind)
+
+# Construct minimum spanning networks (MSNs) with both bitwise and dissimilarity distances
+# Bitwise distance
+Chloro.distmat_bitwise <- bitwise.dist(Chloro.genclone, percent = FALSE, threads = 4)
+# Dissimilarity distance
+Chloro.distmat_dissim <- diss.dist(Chloro.genclone)
+
+networkfun <- function(FILENAME, SEQS, DISTANCES, TIES) {
+  # Calculate network
+  msn <- poppr.msn(SEQS, DISTANCES, vertex.label = "inds", include.ties = TIES)
+  
+  # Plot network
+   
+  CairoPNG(filename = paste0(FILENAME, ".individuals.png"), width = 2000, height = 2500, res = 300)
+  plot_poppr_msn(SEQS, msn, gscale = FALSE, gadj = 3, glim = c(0, 0.8), gweight = 1, wscale = TRUE, nodescale = 5, nodelab = 0.5, inds = "ALL", pop.leg = FALSE)
+  dev.off()
+}
+
+
+#bit
+networkfun("Chloromsn.nt.bitwise.dist", Chloro.genclone, Chloro.distmat_bitwise, FALSE)
+networkfun("Chloromsn.wt.bitwise.dist", Chloro.genclone, Chloro.distmat_bitwise, TRUE)
+
+#dis
+networkfun("Chloromsn.nt.dissim.dist", Chloro.genclone, Chloro.distmat_dissim, FALSE)
+networkfun("Chloromsn.wt.dissim.dist", Chloro.genclone, Chloro.distmat_dissim, TRUE)
+
+
+Chloro.genclone.contracted50 <- Chloro.genclone
+mlg.filter(Chloro.genclone.contracted50) <- 50
+
+largenetworkfun <- function(FILENAME, SEQS, DISTANCES, TIES) {
+  # Calculate network
+  msn <- poppr.msn(SEQS, DISTANCES, vertex.label = "inds", include.ties = TIES)
+  
+  # Plot network
+   
+  CairoPNG(filename = paste0(FILENAME, ".individuals.png"), width = 2500, height = 4500, res = 300)
+  plot_poppr_msn(SEQS, msn, gscale = TRUE, gadj = 3, glim = c(0, 0.8), gweight = 1, wscale = TRUE, nodescale = 5, nodelab = 0.5, inds = "ALL", pop.leg = FALSE)
+  dev.off()
+}
+
+
+# Construct minimum spanning networks 
+	Chloro_distmat_bitwise_cont <- bitwise.dist(Chloro.genclone.contracted50, percent = FALSE, threads = 8)
+	largenetworkfun("Chloro50contracted.msn.nt.bitwise.dist", Chloro.genclone.contracted50, Chloro_distmat_bitwise_cont, FALSE)
+	largenetworkfun("Chloro50contracted.msn.wt.bitwise.dist", Chloro.genclone.contracted50, Chloro_distmat_bitwise_cont, TRUE)
+
+	Chloro_distmat_dissim_cont <- diss.dist(Chloro.genclone.contracted50)
+	largenetworkfun("Chloro50contracted.msn.nt.dissim.dist", Chloro.genclone.contracted50, Chloro_distmat_dissim_cont, FALSE)
+	largenetworkfun("Chloro50contracted.msn.wt.dissim.dist", Chloro.genclone.contracted50, Chloro_distmat_dissim_cont, TRUE)
+
+Chloro.mlg.ids <- mlg.id(Chloro.genclone)
+Chloro.mlg.ids.contracted <- mlg.id(Chloro.genclone.contracted50)
+
+save_mlg_ids <- function(mlg_list, filename) {
+  # Create an empty data frame to store results
+  all_ids <- data.frame()
+
+  # Iterate over each MLG ID and append to the data frame
+  for (i in seq_along(mlg_list)) {
+    # Create a temporary data frame for the current MLG
+    temp_df <- data.frame(MLG_ID = mlg_list[[i]], Cluster = paste("Cluster", i))
+    # Combine with the main data frame
+    all_ids <- rbind(all_ids, temp_df)
+  }
+
+  # Write to a text file
+  write.table(all_ids, file = filename, quote = FALSE, row.names = FALSE)
+}
+
+# Save MLG IDs to text files
+save_mlg_ids(Chloro.mlg.ids, "mlg_ids.txt")
+save_mlg_ids(Chloro.mlg.ids.contracted, "mlg_ids_contracted.txt")
+
+Clusternetworkfun  <- function(FILENAME, SEQS, DISTANCES, TIES) {
+  # Calculate network
+  msn <- poppr.msn(SEQS, DISTANCES, vertex.label = "inds", include.ties = TIES)
+  
+  # Plot network
+   
+  CairoPNG(filename = paste0(FILENAME, ".clusters.png"), width = 2000, height = 2500, res = 150)
+  plot_poppr_msn(SEQS, msn, gscale = TRUE, gadj = 1.5, glim = c(0, 0.8), gweight = 1, wscale = TRUE, nodescale = 5, nodelab = 2, mgl = TRUE, inds = "NONE", pop.leg = FALSE)
+  dev.off()
+}
+
+
+Clusternetworkfun("CHLORO50contractedCLUST.msn.nt.bitwise.dist", Chloro.genclone.contracted50, Chloro_distmat_bitwise_cont, FALSE)
+Clusternetworkfun("CHLORO50contractedCLUST.msn.wt.bitwise.dist", Chloro.genclone.contracted50, Chloro_distmat_bitwise_cont, TRUE)
+
+
+
+$$$$$$$$$$$$$$$$$$$$ MITO $$$$$$$$$$$
+
+ # Load required libraries
+library(poppr)
+library(ape)
+library(adegenet)
+library(Cairo)
+library(RColorBrewer)
+
+
+options(device = "png")
+
+# Read aligned DNA sequences in FASTA format and convert to genind
+Mito.dna <- read.dna("Alligned_Cleaned.MITO.fasta", format = "fasta")
+Mito.genind <- DNAbin2genind(Mito.dna)
+
+# Convert to genclone object for network construction
+Mito.genclone <- as.genclone(Mito.genind)
+
+# Construct minimum spanning networks (MSNs) with both bitwise and dissimilarity distances
+# Bitwise distance
+Mito.distmat_bitwise <- bitwise.dist(Mito.genclone, percent = FALSE, threads = 4)
+# Dissimilarity distance
+Mito.distmat_dissim <- diss.dist(Mito.genclone)
+
+
+# Network construction function
+networkfun <- function(FILENAME, SEQS, DISTANCES, TIES) {
+  # Calculate network
+  msn <- poppr.msn(SEQS, DISTANCES, vertex.label = "inds", include.ties = TIES)
+  
+  # Plot network
+   
+  CairoPNG(filename = paste0(FILENAME, ".individuals.png"), width = 2000, height = 2500, res = 300)
+  plot_poppr_msn(SEQS, msn, gscale = TRUE, gadj = 3, glim = c(0, 0.8), gweight = 1, wscale = TRUE, nodescale = 5, nodelab = 0.5, inds = "ALL", pop.leg = FALSE)
+  dev.off()
+}
+
+#bit
+networkfun("Mitomsn.nt.bitwise.dist", Mito.genclone, Mito.distmat_bitwise, FALSE)
+networkfun("Mitomsn.wt.bitwise.dist", Mito.genclone, Mito.distmat_bitwise, TRUE)
+
+#dis
+networkfun("Mitomsn.nt.dissim.dist", Mito.genclone, Mito.distmat_dissim, FALSE)
+networkfun("Mitomsn.wt.dissim.dist", Mito.genclone, Mito.distmat_dissim, TRUE)
+
+
+Mito.genclone.contracted250 <- Mito.genclone
+mlg.filter(Mito.genclone.contracted250) <- 250
+
+largenetworkfun <- function(FILENAME, SEQS, DISTANCES, TIES) {
+  # Calculate network
+  msn <- poppr.msn(SEQS, DISTANCES, vertex.label = "inds", include.ties = TIES)
+  
+  # Plot network
+   
+  CairoPNG(filename = paste0(FILENAME, ".individuals.png"), width = 2500, height = 4500, res = 300)
+  plot_poppr_msn(SEQS, msn, gscale = TRUE, gadj = 3, glim = c(0, 0.8), gweight = 1, wscale = TRUE, nodescale = 5, nodelab = 0.5, inds = "ALL", pop.leg = FALSE)
+  dev.off()
+}
+
+
+# Construct minimum spanning networks 
+  Mito_distmat_bitwise_cont <- bitwise.dist(Mito.genclone.contracted250, percent = FALSE, threads = 8)
+	largenetworkfun("Mito250contracted.msn.nt.bitwise.dist", Mito.genclone.contracted250, Mito_distmat_bitwise_cont, FALSE)
+	largenetworkfun("Mito250contracted.msn.wt.bitwise.dist", Mito.genclone.contracted250, Mito_distmat_bitwise_cont, TRUE)
+
+	Mito_distmat_dissim_cont <- diss.dist(Mito.genclone.contracted250)
+	largenetworkfun("Mito250contracted.msn.nt.dissim.dist", Mito.genclone.contracted250, Mito_distmat_dissim_cont, FALSE)
+	largenetworkfun("Mito250contracted.msn.wt.dissim.dist", Mito.genclone.contracted250, Mito_distmat_dissim_cont, TRUE)
+
+
+
+Mito.mlg.ids <- mlg.id(Mito.genclone)
+Mito.mlg.ids.contracted <- mlg.id(Mito.genclone.contracted250)
+
+
+
+
+save_mlg_ids <- function(mlg_list, filename) {
+  # Create an empty data frame to store results
+  all_ids <- data.frame()
+
+  # Iterate over each MLG ID and append to the data frame
+  for (i in seq_along(mlg_list)) {
+    # Create a temporary data frame for the current MLG
+    temp_df <- data.frame(MLG_ID = mlg_list[[i]], Cluster = paste("Cluster", i))
+    # Combine with the main data frame
+    all_ids <- rbind(all_ids, temp_df)
+  }
+
+  # Write to a text file
+  write.table(all_ids, file = filename, quote = FALSE, row.names = FALSE)
+}
+
+# Save MLG IDs to text files
+save_mlg_ids(Mito.mlg.ids, "mlg_ids.txt")
+save_mlg_ids(Mito.mlg.ids.contracted, "mlg_ids_contracted.txt")
+
+
+
+colors <- brewer.pal(n = 11, name = "Spectral")
+
+Clusternetworkfun  <- function(FILENAME, SEQS, DISTANCES, TIES) {
+  # Calculate network
+  msn <- poppr.msn(SEQS, DISTANCES, vertex.label = "inds", include.ties = TIES)
+  
+  # Plot network
+   
+  CairoPNG(filename = paste0(FILENAME, ".clusters.png"), width = 2000, height = 2500, res = 222)
+  plot_poppr_msn(SEQS, msn, gscale = TRUE, gadj = 1.5, glim = c(0, 0.8), gweight = 1, wscale = TRUE, nodescale = 5, nodelab = 400, mgl = TRUE, inds = "NONE", pop.leg = FALSE)
+  dev.off()
+}
+
+Clusternetworkfun("MITO250contractedCLUST.msn.nt.bitwise.dist", Mito.genclone.contracted250, Mito_distmat_bitwise_cont, FALSE)
+Clusternetworkfun("MITO250contractedCLUST.msn.wt.bitwise.dist", Mito.genclone.contracted250, Mito_distmat_bitwise_cont, TRUE)
+
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
