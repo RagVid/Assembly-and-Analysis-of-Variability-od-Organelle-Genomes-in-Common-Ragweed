@@ -1,0 +1,277 @@
+cd ~/whereVCFis
+
+module load vcftools/0.1.15
+
+%%%% MITO
+
+# SNPs
+vcftools --vcf MitoHaploid.vcf --remove-indels --recode --recode-INFO-all --out ./FilterinStats/MitoHaploidStats
+# QD
+cat ./FilterinStats/MitoHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^QD=" | awk -F "=" '{print $2}' > ./FilterinStats/MitoHaploidStats.QD
+# DP
+cat ./FilterinStats/MitoHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^DP=" | awk -F "=" '{print $2}' > ./FilterinStats/MitoHaploidStats.DP
+# MQ
+cat ./FilterinStats/MitoHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^MQ=" | awk -F "=" '{print $2}' > ./FilterinStats/MitoHaploidStats.MQ
+# FS
+cat ./FilterinStats/MitoHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^FS=" | awk -F "=" '{print $2}' > ./FilterinStats/MitoHaploidStats.FS
+# SOR
+cat ./FilterinStats/MitoHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^SOR=" | awk -F "=" '{print $2}' > ./FilterinStats/MitoHaploidStats.SOR
+# MQRankSum
+cat ./FilterinStats/MitoHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^MQRankSum=" | awk -F "=" '{print $2}' > ./FilterinStats/MitoHaploidStats.MQRankSum
+# ReadPosRankSum
+cat ./FilterinStats/MitoHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^ReadPosRankSum=" | awk -F "=" '{print $2}' > ./FilterinStats/MitoHaploidStats.ReadPosRankSum
+
+%%%% CHLORO
+
+# SNPs
+vcftools --vcf ChloroHaploid.vcf --remove-indels --recode --recode-INFO-all --out ./FilterinStats/ChloroHaploidStats
+# QD
+cat ./FilterinStats/ChloroHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^QD=" | awk -F "=" '{print $2}' > ./FilterinStats/ChloroHaploidStats.QD
+# DP
+cat ./FilterinStats/ChloroHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^DP=" | awk -F "=" '{print $2}' > ./FilterinStats/ChloroHaploidStats.DP
+# MQ
+cat ./FilterinStats/ChloroHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^MQ=" | awk -F "=" '{print $2}' > ./FilterinStats/ChloroHaploidStats.MQ
+# FS
+cat ./FilterinStats/ChloroHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^FS=" | awk -F "=" '{print $2}' > ./FilterinStats/ChloroHaploidStats.FS
+# SOR
+cat ./FilterinStats/ChloroHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^SOR=" | awk -F "=" '{print $2}' > ./FilterinStats/ChloroHaploidStats.SOR
+# MQRankSum
+cat ./FilterinStats/ChloroHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^MQRankSum=" | awk -F "=" '{print $2}' > ./FilterinStats/ChloroHaploidStats.MQRankSum
+# ReadPosRankSum
+cat ./FilterinStats/ChloroHaploidStats.recode.vcf | grep -v "^#" | awk '{print $8}' | sed 's/;/\n/g' | grep "^ReadPosRankSum=" | awk -F "=" '{print $2}' > ./FilterinStats/ChloroHaploidStats.ReadPosRankSum
+
+
+$$$$$$$$$$$$ FILTERING STATS R $$$$$$$$
+
+library(ggplot2)
+library(gridExtra)
+
+setwd("yourWD")
+
+
+ChloroII.DP <- read.table("~/R vaje/Organeli Žvrklje/ChloroII.DP", quote="\"", comment.char="")
+ChloroII.MQ <- read.table("~/R vaje/Organeli Žvrklje/ChloroII.MQ", quote="\"", comment.char="")
+ChloroII.FS <- read.table("~/R vaje/Organeli Žvrklje/ChloroII.FS", quote="\"", comment.char="")
+ChloroII.SOR <- read.table("~/R vaje/Organeli Žvrklje/ChloroII.SOR", quote="\"", comment.char="")
+ChloroII.MQRankSum <- read.table("~/R vaje/Organeli Žvrklje/ChloroII.MQRankSum", quote="\"", comment.char="")
+ChloroII.ReadPosRankSum <- read.table("~/R vaje/Organeli Žvrklje/ChloroII.ReadPosRankSum", quote="\"", comment.char="")
+ChloroII.QD <- read.table("~/R vaje/Organeli Žvrklje/ChloroII.DP", quote="\"", comment.char="")
+
+MitoII.DP <- read.table("~/R vaje/Organeli Žvrklje/MitoII.DP", quote="\"", comment.char="")
+MitoII.MQ <- read.table("~/R vaje/Organeli Žvrklje/MitoII.MQ", quote="\"", comment.char="")
+MitoII.FS <- read.table("~/R vaje/Organeli Žvrklje/MitoII.FS", quote="\"", comment.char="")
+MitoII.SOR <- read.table("~/R vaje/Organeli Žvrklje/MitoII.SOR", quote="\"", comment.char="")
+MitoII.MQRankSum <- read.table("~/R vaje/Organeli Žvrklje/MitoII.MQRankSum", quote="\"", comment.char="")
+MitoII.ReadPosRankSum <- read.table("~/R vaje/Organeli Žvrklje/MitoII.ReadPosRankSum", quote="\"", comment.char="")
+MitoII.QD <- read.table("~/R vaje/Organeli Žvrklje/MitoII.DP", quote="\"", comment.char="")
+
+Plot code is in R.markdown file 
+
+pdf(file = "MitoII-filter.pdf",
+  width = 14,
+  height = 10.5,
+  useDingbats=FALSE)
+grid.arrange(MitoII.QD.plot, MitoII.DP.plot, MitoII.MQ.plot, MitoII.FS.plot, MitoII.SOR.plot, MitoII.MQRankSum.plot, MitoII.ReadPosRankSum.plot, nrow = 3)
+dev.off()
+
+pdf(file = "ChloroII-filter.pdf",
+  width = 14,
+  height = 10.5,
+  useDingbats=FALSE)
+grid.arrange(ChloroII.QD.plot, ChloroII.DP.plot, ChloroII.MQ.plot, ChloroII.FS.plot, ChloroII.SOR.plot, ChloroII.MQRankSum.plot, ChloroII.ReadPosRankSum.plot, nrow = 3)
+dev.off()
+
+$$$$$$$$$$$$$$ Applying the FilterinStats
+
+
+trying custom filters was not good. I used the default filters from gatk website in the end
+
+$$$$$$$$$$ TRIED WITH PAULS FILTERS TO SEE IF MINE ARE WRONG, In the end we used the default gatk filters, JUST USE THE GATK DEFAULT LIKE SAM2 FILTER COMPARISON PAPER
+
+CHLORO
+
+module load gatk/3.7
+java \
+-jar /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/jar/GenomeAnalysisTK.jar \
+-T VariantFiltration \
+-R /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ReferenceFastaForTheAGES.18CH.Chloro.Mito.fasta \
+-V /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/VCFs/Chloro/FilterinStats/ChloroHaploidStats.recode.vcf \
+-filter "QD < 2.0" --filterName "QD2" \
+-filter "QUAL < 30.0" --filterName "QUAL30" \
+-filter "SOR > 3.0" --filterName "SOR3" \
+-filter "FS > 60.0" --filterName "FS60" \
+-filter "MQ < 40.0" --filterName "MQ40" \
+-filter "MQRankSum < -12.5" --filterName "MQRankSum-12.5" \
+-filter "ReadPosRankSum < -8.0" --filterName "ReadPosRankSum-8" \
+-o /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/VCFs/Chloro/SNPsHaploidCHLORO.HardFilterTag.vcf
+
+MITO
+
+module load gatk/3.7
+java \
+-jar /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/jar/GenomeAnalysisTK.jar \
+-T VariantFiltration \
+-R /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ReferenceFastaForTheAGES.18CH.Chloro.Mito.fasta \
+-V /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/VCFs/Mito/FilterinStats/MitoHaploidStats.recode.vcf \
+-filter "QD < 2.0" --filterName "QD2" \
+-filter "QUAL < 30.0" --filterName "QUAL30" \
+-filter "SOR > 3.0" --filterName "SOR3" \
+-filter "FS > 60.0" --filterName "FS60" \
+-filter "MQ < 40.0" --filterName "MQ40" \
+-filter "MQRankSum < -12.5" --filterName "MQRankSum-12.5" \
+-filter "ReadPosRankSum < -8.0" --filterName "ReadPosRankSum-8" \
+-o /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/VCFs/Mito/SNPsHaploidMITO.HardFilterTag.vcf
+
+
+# code to remove filtered variants plus additional filters
+# remove variants called in less than 80% of samples
+# remove variants with a genotype depth < 3
+
+module load StdEnv/2020
+module load vcftools
+
+
+cd /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/VCFs/Chloro
+
+vcftools --vcf SNPsHaploidCHLORO.HardFilterTag.vcf \
+--max-missing 0.8 \
+--minDP 3 \
+--remove-filtered-all \
+--recode \
+--recode-INFO-all \
+--out ChloroHaploidSNPs.HardFilter
+
+cd /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/VCFs/Mito
+
+vcftools --vcf SNPsHaploidMITO.HardFilterTag.vcf \
+--max-missing 0.8 \
+--minDP 3 \
+--remove-filtered-all \
+--recode \
+--recode-INFO-all \
+--out MitoHaploidSNPs.HardFilter
+%%%%%%%%%%%%%%%%%%%%%
+
+
+FILTERING PLANS
+
+vcf
+- remove inds that are not in our database and really bad (apples) outliers/odstraniš tiste ind, ki se ne ujemajo s tabelo in hude outlierje (bad_apples)
+- removing inds that have missingness above 0.05/odstraniš tiste ind, ki manjkajo nad 0.05 (razen outgroup)
+
+plink
+- remove all SNPs that are missing from any inds/odstranim vse snp, ki manjkajo.
+- MAF filter to 0.05/odstranim vse snp z MAF manj kot 0.05
+
+
+List of BAD APPLES (bad outliers, possible contaminants, hybrids etc)/ LISTA outlierjev in neujemajočih (bad_apples)
+
+AA7-11
+EU2-01-11
+EU2-14-1
+EU2-19-7
+FL-A-2
+FL-C-1
+FL-C-2
+KSAP1-A
+KSAP5-B
+MO-18
+MOB-1
+NJ-C-5
+QC3-24
+TRQB-3
+TRQB-5
+TRQB-6
+NC-10-F
+IA-7
+SC-K-1
+Extraction_blank
+MA-A-8
+
+MITO
+
+#remove bad apples
+vcftools --remove bad_apples.txt --vcf MitoHaploidSNPs.HardFilter.recode.vcf  --recode --out MitoHaploidSNPs_1
+#get indv data
+vcftools --vcf MitoHaploidSNPs_1.recode.vcf --missing-indv --out MitoHaploid1
+#get a list indv missing less than 0.05
+awk '$5 < 0.05 {print $1}' MitoHaploid1.imiss > MitoHaploid_inds_to_keep.txt
+#add outrooups t the list so they stay in
+cat ../../Outgroup.list >> MitoHaploid_inds_to_keep
+#remove the bad inds
+vcftools --vcf MitoHaploidSNPs_1.recode.vcf --keep MitoHaploid_inds_to_keep.txt --recode --out MitoHaploidSNPs_2
+
+#With outgroups
+
+module load plink/1.9
+plink --vcf MitoHaploidSNPs_2.recode.vcf --make-bed --geno 0 --double-id  --allow-extra-chr --set-missing-var-ids @:# --out mitoHapAll
+plink --bfile mitoHapAll --pca --allow-extra-chr --out mitoHapAll 
+
+#Removing outgroups
+
+vcftools --remove ../../Outgroup.list --vcf MitoHaploidSNPs_2.recode.vcf --recode --out MitoHapSNPs.RemovedOutgroups
+
+plink --vcf MitoHapSNPs.RemovedOutgroups.recode.vcf --make-bed --geno 0 --maf 0.05 --double-id --allow-extra-chr --set-missing-var-ids @:# --out mitoHapNOutgroups
+
+plink --bfile mitoHapNOutgroups --pca --allow-extra-chr --out mitoHapNOutgroups 
+
+#NAmerica
+
+vcftools --keep ./NA_Individuals.txt --vcf MitoHapSNPs.RemovedOutgroups.recode.vcf --recode --out MitoHapSNPs.NA
+plink --vcf MitoHapSNPs.NA.recode.vcf --make-bed --geno 0 --maf 0.05 --double-id --allow-extra-chr --set-missing-var-ids @:# --out MitoHapSNPs.NA
+plink --bfile MitoHapSNPs.NA --pca --allow-extra-chr --out MitoHapSNPs.NA 
+
+#EU PCA
+
+vcftools --keep ./EU_Individuals.txt --vcf MitoHapSNPs.RemovedOutgroups.recode.vcf --recode --out MitoHapSNPs.EU
+plink --vcf MitoHapSNPs.EU.recode.vcf --make-bed --geno 0 --maf 0.05 --double-id --allow-extra-chr --set-missing-var-ids @:# --out MitoHapSNPs.EU
+plink --bfile MitoHapSNPs.EU --pca --allow-extra-chr --out MitoHapSNPs.EU 
+
+#AUS PCA
+
+vcftools --keep ./AUS_Individuals.txt --vcf MitoHapSNPs.RemovedOutgroups.recode.vcf --recode --out MitoHapSNPs.AUS
+plink --vcf MitoHapSNPs.AUS.recode.vcf --make-bed --geno 0 --maf 0.05 --double-id --allow-extra-chr --set-missing-var-ids @:# --out MitoHapSNPs.AUS
+plink --bfile MitoHapSNPs.AUS --pca --allow-extra-chr --out MitoHapSNPs.AUS 
+
+Chloro 
+
+#remove bad apples
+vcftools --remove bad_apples.txt --vcf ChloroHaploidSNPs.HardFilter.recode.vcf  --recode --out ChloroHaploidSNPs_1
+#get indv data
+vcftools --vcf ChloroHaploidSNPs_1.recode.vcf --missing-indv --out ChloroHaploid1
+#get a list indv missing less than 0.05
+awk '$5 < 0.05 {print $1}' ChloroHaploid1.imiss > ChloroHaploid_inds_to_keep.txt
+#add outrooups t the list so they stay in
+cat ../../Outgroup.list >> ChloroHaploid_inds_to_keep
+#remove the bad inds
+vcftools --vcf ChloroHaploidSNPs_1.recode.vcf --keep ChloroHaploid_inds_to_keep.txt --recode --out ChloroHaploidSNPs_2
+
+#With outgroups
+
+module load plink/1.9
+plink --vcf ChloroHaploidSNPs_2.recode.vcf --make-bed --geno 0 --double-id  --allow-extra-chr --set-missing-var-ids @:# --out chloroHapAll
+plink --bfile chloroHapAll --pca --allow-extra-chr --out chloroHapAll 
+
+#Removing outgroups
+
+vcftools --remove ../../Outgroup.list --vcf ChloroHaploidSNPs_2.recode.vcf --recode --out ChloroHapSNPs.RemovedOutgroups
+plink --vcf ChloroHapSNPs.RemovedOutgroups.recode.vcf --make-bed --geno 0 --maf 0.05 --double-id --allow-extra-chr --set-missing-var-ids @:# --out chloroHapNOutgroups
+plink --bfile chloroHapNOutgroups --pca --allow-extra-chr --out chloroHapNOutgroups 
+
+#NA PCA
+
+vcftools --keep ./NA_Individuals.txt --vcf ChloroHapSNPs.RemovedOutgroups.recode.vcf --recode --out ChloroHapSNPs.NA
+plink --vcf ChloroHapSNPs.NA.recode.vcf --make-bed --geno 0 --maf 0.05 --double-id --allow-extra-chr --set-missing-var-ids @:# --out ChloroHapSNPs.NA
+plink --bfile ChloroHapSNPs.NA --pca --allow-extra-chr --out ChloroHapSNPs.NA 
+
+#EU PCA
+
+vcftools --keep ./EU_Individuals.txt --vcf ChloroHapSNPs.RemovedOutgroups.recode.vcf --recode --out ChloroHapSNPs.EU
+plink --vcf ChloroHapSNPs.EU.recode.vcf --make-bed --geno 0 --maf 0.05 --double-id --allow-extra-chr --set-missing-var-ids @:# --out ChloroHapSNPs.EU
+plink --bfile ChloroHapSNPs.EU --pca --allow-extra-chr --out ChloroHapSNPs.EU 
+
+#AUS PCA
+
+vcftools --keep ./AUS_Individuals.txt --vcf ChloroHapSNPs.RemovedOutgroups.recode.vcf --recode --out ChloroHapSNPs.AUS
+plink --vcf ChloroHapSNPs.AUS.recode.vcf --make-bed --geno 0 --maf 0.05 --double-id --allow-extra-chr --set-missing-var-ids @:# --out ChloroHapSNPs.AUS
+plink --bfile ChloroHapSNPs.AUS --pca --allow-extra-chr --out ChloroHapSNPs.AUS 
