@@ -1,0 +1,192 @@
+$$$$ Get fasta from my parsed .bams $$$$
+
+smux n -A qv39 --ntasks 4 --mem 6G -J C
+smux n -A qv39 --ntasks 4 --mem 6G -J M
+
+
+#Mito
+cp ../../All-MITO-BAMS/* ./ #getting the bams into the fold
+
+module load bcftools
+while read bam_file; do
+    base_name=$(basename "$bam_file" .bam)
+    
+    # Generate VCF
+    bcftools mpileup -Ou -f "/fs03/qv39/Vid_is_mapping_BAM/Mito_path_sequence.fasta" $bam_file | bcftools call --ploidy 1 -mv -Oz -o "$base_name.vcf.gz"
+    
+    # Index the VCF
+    bcftools index "$base_name.vcf.gz"
+    
+    # Generate consensus FASTA
+    bcftools consensus -f "/fs03/qv39/Vid_is_mapping_BAM/Mito_path_sequence.fasta" "$base_name.vcf.gz" > "$base_name.consensus.fasta"
+done < MitoBAM.list
+
+
+#Chloro
+
+
+
+while read bam_file; do
+    base_name=$(basename "$bam_file" .bam)
+    
+    # Generate VCF
+    bcftools mpileup -Ou -f "/fs03/qv39/Vid_is_mapping_BAM/Chloro_path_sequence.fasta" $bam_file | bcftools call --ploidy 1 -mv -Oz -o "$base_name.vcf.gz"
+    
+    # Index the VCF
+    bcftools index "$base_name.vcf.gz"
+    
+    # Generate consensus FASTA
+    bcftools consensus -f "/fs03/qv39/Vid_is_mapping_BAM/Chloro_path_sequence.fasta" "$base_name.vcf.gz" > "$base_name.consensus.fasta"
+done < ChloroBAM.list
+
+
+for FASTA in *fasta
+do   
+echo 'Changin things for the better!'
+sed -i "s|VidMitoPMATcircular|$FASTA|g" "$FASTA"
+done
+
+cat *.fasta >> MITO_combined_sequences.fasta
+
+for FASTA in *fasta
+do   
+echo 'Changin things for the better!'
+sed -i "s|VidChloroPMATcircular|$FASTA|g" "$FASTA"
+done
+
+cat *.fasta > CHLORO_combined_sequences.fasta
+
+$$$$$$ ALLIGNMENT OF THESE FASTASSSS $$$$
+
+module load mafft
+mafft --auto in > oout
+
+%%%%%% RAxML %%%%%%
+
+smux n -A qv39 --ntasks 24 --mem 64G -J M
+smux n -A qv39 --ntasks 24 --mem 64G -J C
+
+
+cd "/fs03/qv39/Vid_is_mapping_BAM/Phylogednetic Trees/RAxML/"
+module load raxml-ng/1.0.0
+
+raxml-ng --all --msa ../Mito/Mito.Concensus.Fastas/Alligned.MITO.fasta --model GTR+G --prefix Mito_phylo_tree --threads 24 --bs-trees 100 --force perf_threads
+raxml-ng --all --msa ../Chloro/Chloro.Concensus.Fastas/Allignedd.CHLORO.fasta --model GTR+G --prefix Chloro_phylo_tree --threads 24 --bs-trees 100 --force perf_threads
+
+
+
+%%%%%%%%%% SLURM JOB
+
+
+save this as Mito_phylo_tree.sh and then submit it as sbatch Mito_phylo_tree.sh
+
+#!/bin/bash
+#SBATCH --job-name=raxml-ng-job        
+#SBATCH --ntasks=1                     
+#SBATCH --cpus-per-task=48           
+#SBATCH --mem=64G                      
+#SBATCH --time=24:00:00                
+#SBATCH --output=raxml_Mito.log       
+
+cd "/fs03/qv39/Vid_is_mapping_BAM/Phylogednetic Trees/RAxML/"
+module load raxml-ng/1.0.0
+raxml-ng --all --msa ../Mito/Mito.Concensus.Fastas/Alligned.MITO.fasta --model GTR+G --prefix Mito_phylo_tree --threads 48 --bs-trees 250 
+
+$$$$$$$$ Creating a compiled fasta to remove the ones that oare not in the "MitoHaploid_inds_to_keep.txt" or "ChloroHaploid_inds_to_keep.txt"
+#YOU FORGOT THAT THEY HAVE TO BE ALLIGNED AND YOU COULD HAVE JUST EDITED THE ALLIGNED MA-FASTA
+
+while read Sample; do
+  
+cp ../${Sample}.Mito.consensus.fasta ./
+
+done < MitoHaploid_inds_to_keep.txt
+
+
+while read Sample; do
+  
+cp ../${Sample}.Chloro.consensus.fasta ./
+
+done < ChloroHaploid_inds_to_keep.txt
+
+for FASTA in *fasta
+do   
+echo 'Changin things for the better!'
+sed -i "s|VidMitoPMATcircular|$FASTA|g" "$FASTA"
+done
+
+cat *.fasta >> MITO_combined_sequences_2.fasta
+
+for FASTA in *fasta
+do   
+echo 'Changin things for the better!'
+sed -i "s|VidChloroPMATcircular|$FASTA|g" "$FASTA"
+done
+
+cat *.fasta > CHLORO_combined_sequences_2.fasta
+
+$$$$$$$$$$$$$$ CUTTING THE non "MitoHaploid_inds_to_keep.txt" or "ChloroHaploid_inds_to_keep.txt"
+ $$$$ from the Alligned Fastas
+
+
+sed -i "s|.Mito.consensus.fasta||g" Alligned.MITO.fasta
+
+module load seqtk
+ 
+seqtk subseq Alligned.MITO.fasta MitoHaploid_inds_to_keep.txt > Alligned_Cleaned.MITO.fasta
+
+
+sed -i "s|.Chloro.consensus.fasta||g" Allignedd.CHLORO.fasta 
+
+module load seqtk
+ 
+seqtk subseq Allignedd.CHLORO.fasta  ChloroHaploid_inds_to_keep.txt > Alligned_Cleaned.CHLORO.fasta
+
+
+$$$$ Continents only
+
+module load seqtk
+ 
+seqtk subseq Alligned_Cleaned.CHLORO.fasta NA_Individuals+root.txt > NA_Alligned_CHLORO.fasta
+seqtk subseq Alligned_Cleaned.CHLORO.fasta EU_Individuals+root.txt > EU_Alligned_CHLORO.fasta
+seqtk subseq Alligned_Cleaned.CHLORO.fasta AUS_Individuals+root.txt > AUS_Alligned_CHLORO.fasta
+
+seqtk subseq Alligned_Cleaned.MITO.fasta NA_Individuals+root.txt > NA_Alligned_MITO.fasta
+seqtk subseq Alligned_Cleaned.MITO.fasta EU_Individuals+root.txt > EU_Alligned_MITO.fasta
+seqtk subseq Alligned_Cleaned.MITO.fasta AUS_Individuals+root.txt > AUS_Alligned_MITO.fasta
+
+
+
+#!/bin/bash
+#SBATCH --job-name=raxml-ng-job
+#SBATCH --ntasks=1
+#SBATCH --account=qv39
+#SBATCH --cpus-per-task=48
+#SBATCH --mem=48G
+#SBATCH --time=33:00:00
+#SBATCH --output=raxml_Chloro.log
+
+cd "/fs03/qv39/Vid_is_mapping_BAM/Phylogenetic Trees/RAxML/TreesCleaned_1"
+module load raxml-ng/1.0.0
+raxml-ng --all --msa Alligned_Cleaned.CHLORO.fasta --model GTR+G --prefix Chloro_phylo_tree --threads 48 --bs-trees 250
+
+
+#!/bin/bash
+#SBATCH --job-name=raxml-ng-job
+#SBATCH --ntasks=1
+#SBATCH --account=qv39
+#SBATCH --cpus-per-task=36
+#SBATCH --mem=32G
+#SBATCH --time=33:00:00
+
+
+filename=$1
+
+cd "/fs03/qv39/Vid_is_mapping_BAM/Phylogenetic Trees/RAxML/TreesCleaned_1"
+module load raxml-ng/1.0.0
+raxml-ng --all --msa ${filename} --model GTR+G --prefix ${filename}_phylo_tree --threads 36 --bs-trees 250
+
+
+while read line1 ; 
+do sbatch -J ${line1} -e ${line1}.e -o ${line1}.o Continental_phylo_trees.sh ${line1}; 
+done < filenames.txt
+
