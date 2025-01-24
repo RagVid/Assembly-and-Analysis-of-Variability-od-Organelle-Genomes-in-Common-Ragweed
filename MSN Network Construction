@@ -13,7 +13,6 @@ library(ape)
 library(adegenet)
 library(Cairo)
 library(RColorBrewer)
-
 options(device = "png")
 
 
