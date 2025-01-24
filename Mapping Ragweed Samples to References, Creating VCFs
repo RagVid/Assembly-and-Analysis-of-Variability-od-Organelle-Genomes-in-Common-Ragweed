@@ -1,0 +1,287 @@
+%%%%%%%%%%% MAKING MAKEFILES OR CHANGING THEM
+
+cat samples.txt | while read SAMP
+do
+A1=$(cat $SAMP.adapters | grep 'adapter1:' | sed 's/  --adapter1:  //')
+A2=$(cat $SAMP.adapters | grep 'adapter2:' | sed 's/  --adapter2:  //')
+cat makefile-template.yaml | sed "s/ADAPTER1/$A1/" | sed "s/ADAPTER2/$A2/" | sed "s/SAMPLENAME/$SAMP/" > $SAMP.yaml
+done
+
+for YAML in ./*yaml
+do   
+echo 'Changin things for the better!'
+sed -i 's|Path: /home/pbattlay/om62_scratch/ragweed2022/ref/ragweed-dipasm-hap1.fasta|Path: /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ragweed-dipasm-hap1.chrs.fasta|g' $YAML  
+sed -i 's|ragweed_chloroplast_MG019037:|Chloroplast_ragweed_PMAT:|g' $YAML 
+sed -i 's|Path: /home/pbattlay/om62_scratch/ragweed2022/ref/aarte-chlor.fasta|Path: /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/Chloro_path_sequence.fasta|g' $YAML 
+sed -i '154i\  Mitochondria_ragweed_PMAT: \n    Path: /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/Mito_path_sequence.fasta' $YAML
+sed -i 's|/home/pbattlay/om62_scratch/ragweed2022/fastq/|/home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ragweed-seqs/|g' $YAML  
+
+done
+
+for YAML in ./*yaml
+do   
+echo 'Changin things for the better!'
+sed -i 's|Path: /home/pbattlay/om62_scratch/ragweed2022/ref/ragweed-dipasm-hap1.fasta|Path: /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ReferenceFastaForTheAGES.18CH.Chloro.Mito.fasta|g' $YAML  
+sed -i 's|ragweed_chloroplast_MG019037:||g' $YAML 
+sed -i 's|Path: /home/pbattlay/om62_scratch/ragweed2022/ref/aarte-chlor.fasta||g' $YAML 
+sed -i 's|/home/pbattlay/om62_scratch/ragweed2022/fastq/|/home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ragweed-seqs/|g' $YAML  
+
+done
+
+for YAML in ./*yaml
+do   
+echo 'Changin things for the better!'
+sed -i 's|ragweed2021|RagweedsGenomes|g' $YAML 
+
+done
+
+sed -i 's/OLDtext/NEWtext/g' text.file
+sed -i 's#OLDtext#NEWtext#g' text.file
+sed -i '8i This is Line 8' text.file
+
+$$$$$$$$$$$$$$$$ RUNNIN PALEOMIX JOBS SO MANY JOBSCRIPT
+paleomixer.sh created
+
+#!/bin/bash
+#SBATCH --job-name=paleomix-return-of-the-weed
+#SBATCH --account=qv39
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem-per-cpu=16G
+#SBATCH --time=12:00:00
+#SBATCH --output=paleomix-aus-%a.out
+#SBATCH --error=paleomix-aus-%a.err
+#SBATCH --array=1-101
+
+module load paleomix/1.2.13.4-python2
+module load adapterremoval/2.3.1
+module load mapdamage/2.0.9-u1
+
+source /usr/local2/bioinformatics/bioansible_env.sh
+module load bwa/v0.7.15
+module load samtools/1.8
+
+filename=$1
+
+cd ~/qv39_scratch/Vid_is_mapping_BAM/BAMs
+
+paleomix bam_pipeline run /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ragweed-seqs/${filename} \
+     --jar-root=/home/vterzer/qv39_scratch/Vid_is_mapping_BAM/jar/ \
+     --max-threads 12 \
+     --bwa-max-threads 12 \
+     --adapterremoval-max-threads 12 \
+     --jre-option -Xmx16g \
+     --temp-root /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/temp/
+     
+
+>You can run it in a loop like this 
+
+while read line1 ; 
+do sbatch -J ${line1} -e ${line1}.e -o ${line1}.o startBAtCHJOBShere/OGPaleomixer.sh ${line1}; 
+done < startBAtCHJOBShere/napake
+
+#need a list of filenames as well, the list has 2 columns
+file_name_1 and_second_column_is_name_of_out&error
+
+
+#!/bin/bash
+#SBATCH --job-name=paleomix-return-of-the-weed
+#SBATCH --account=qv39
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem-per-cpu=16G
+#SBATCH --time=12:00:00
+#SBATCH --output=paleomix.out
+#SBATCH --error=paleomix.err
+
+module load paleomix/1.2.13.4-python2
+module load adapterremoval/2.3.1
+module load mapdamage/2.0.9-u1
+
+source /usr/local2/bioinformatics/bioansible_env.sh
+module load bwa/v0.7.15
+module load samtools/1.8
+
+cd ~/qv39_scratch/Vid_is_mapping_BAM/EU_MAkefiles
+
+paleomix bam_pipeline run /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/EU_MAkefiles/EU2-19-2.yaml \
+     --jar-root=/home/vterzer/qv39_scratch/Vid_is_mapping_BAM/jar/ \
+     --max-threads 12 \
+     --bwa-max-threads 12 \
+     --adapterremoval-max-threads 12 \
+     --jre-option -Xmx16g \
+     --temp-root /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/temp/
+
+
+$$$$$$$$$$$$$$$$$$$$$$ NEW LINUX MApping &&&&&&&&&&&&&&&&&&&&&&$$
+
+
+wget -O "/fs03/qv39/Vid_is_mapping_BAM/jar/" https://github.com/broadinstitute/picard/releases/download/2.23.3/picard.jar
+
+
+#if you're runnin batch jobs do the following two in the login node enviroment and then skip them in the submiting batch job sccript
+module load miniconda3
+conda activate paleomix
+
+
+
+OGPaleomixer.sh
+#!/bin/bash
+#SBATCH --job-name=paleomix-return-of-the-weed
+#SBATCH --account=qv39
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem-per-cpu=10G
+#SBATCH --time=29:00:00
+#SBATCH --output=paleomix.out
+#SBATCH --error=paleomix.err
+
+filename=$1
+
+cd ~/qv39_scratch/Vid_is_mapping_BAM/EU_MAkefiles
+
+paleomix bam_pipeline run ./${filename} \
+     --jar-root=/home/vterzer/qv39_scratch/Vid_is_mapping_BAM/jar/ \
+     --max-threads 12 \
+     --bwa-max-threads 12 \
+     --adapterremoval-max-threads 12 \
+     --jre-option=-Xmx16g \
+     --temp-root /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/temp/
+
+
+while read line1 ; 
+do sbatch -J ${line1} -e ${line1}.e -o ${line1}.o OGPaleomixer.sh ${line1}; 
+done < list
+
+$$$$$$ FOR RE-DOING AUS
+
+
+#ran these two in login node
+module load miniconda3
+conda activate paleomix
+
+
+
+OGPaleomixer in ~/qv39_scratch/Vid_is_mapping_BAM/RealAUSMapping/ragweed-aus-fastq/
+
+#!/bin/bash
+#SBATCH --job-name=paleomix-return-of-the-weed
+#SBATCH --account=qv39
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem-per-cpu=10G
+#SBATCH --time=33:00:00
+#SBATCH --output=paleomix-aus-%a.out
+#SBATCH --error=paleomix-aus-%a.err
+#SBATCH --array=1-101
+
+N=$SLURM_ARRAY_TASK_ID
+SAMP=$(cat ~/qv39_scratch/Vid_is_mapping_BAM/RealAUSMapping/ragweed-aus-fastq/samples.txt | head -n $N | tail -n 1)
+
+cd ~/qv39_scratch/Vid_is_mapping_BAM/RealAUSMapping/ragweed-aus-fastq/
+
+paleomix bam_pipeline run ./$SAMP.yaml \
+     --jar-root=/home/vterzer/qv39_scratch/Vid_is_mapping_BAM/jar/ \
+     --max-threads 12 \
+     --bwa-max-threads 12 \
+     --adapterremoval-max-threads 12 \
+     --jre-option=-Xmx16g \
+     --temp-root /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/temp/
+
+     
+
+
+$$$$$$ znebimo se nepotrebnih vmesnih rezultatov
+
+for dir in "/fs03/qv39/Vid_is_mapping_BAM/EU_MAkefiles"/* 
+  do 
+    cd $dir 
+    echo -e ' \n Loopdidooping trough directory >'
+echo $dir
+echo -e 'as we speak! \n'
+rm -rf RagweedsGenomes
+rm -rf reads
+
+
+done
+
+
+%%% parsing the bam just to get my organelles &&&
+
+samtools view -b 280808-1-10.RagweedsGenomes.realigned.bam VidMitoPMATcircular > 280808-1-10.Mito.bam
+samtools view -b 280808-1-10.RagweedsGenomes.realigned.bam VidChloroPMATcircular > 280808-1-10.Chloro.bam
+
+#to check if it worked
+samtools idxstats FILE s
+
+#extract the organelle reads into seperate bams so we ccan delete the nuclear ones
+
+while read bam_file; do
+     echo 'BAM!BAMM!BAM!'
+     samtools view -b $bam_file.RagweedsGenomes.bam VidMitoPMATcircular > $bam_file.Mito.bam
+     samtools view -b $bam_file.RagweedsGenomes.bam VidChloroPMATcircular > $bam_file.Chloro.bam
+done < samples.txt
+
+
+
+samtools index -M  *.bam
+
+
+#calculate the avg min max coverage
+
+for bamfile in *.bam; do
+  # Extract the base name without the .bam extension
+  base=$(basename "$bamfile" .bam)
+
+  # Generate the coverage file
+  samtools depth -a "$bamfile" > "${base}_coverage.txt"
+
+  # Calculate the average coverage and append to a summary file
+  awk '{sum+=$3} END {print "'$bamfile': Average Coverage:", sum/NR}' "${base}_coverage.txt" >> coverage_summary.txt
+done
+
+awk '{sum+=$NF} END {print "Overall Average Coverage:", sum/NR}' coverage_summary.txt
+awk 'BEGIN {min=999999; max=0} {if($NF<min) min=$NF; if($NF>max) max=$NF} END {print "Minimum Coverage:", min; print "Maximum Coverage:", max}' coverage_summary.txt
+
+$$$$$$$$$$$$$$ VCF CREATION $$$$$$$$$$
+
+
+%%% MITO
+cd /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/All-MITO-BAMS
+
+#module load nixpkgs/16.09
+module load gatk/3.7
+
+JAVA_TOOL_OPTIONS="-Xmx16g"
+
+java -jar /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/jar/GenomeAnalysisTK.jar \
+     -T UnifiedGenotyper \
+     -nt 8 \
+     -R /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ReferenceFastaForTheAGES.18CH.Chloro.Mito.fasta \
+     -I /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/All-MITO-BAMS/MitoBAM.list \
+     -glm BOTH \
+     -ploidy 1 \
+     -o /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/VCFs/Mito/MitoHaploid.vcf
+
+
+%%% CHLORO
+
+  cd /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/All-CHLORO-BAMS
+
+#module load nixpkgs/16.09
+module load gatk/3.7
+
+JAVA_TOOL_OPTIONS="-Xmx16g"
+
+java -jar /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/jar/GenomeAnalysisTK.jar \
+  -T UnifiedGenotyper \
+  -nt 8 \
+  -R /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/ReferenceFastaForTheAGES.18CH.Chloro.Mito.fasta \
+  -I /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/All-CHLORO-BAMS/ChloroBAM.list \
+  -glm BOTH \
+  -ploidy 1 \
+  -o /home/vterzer/qv39_scratch/Vid_is_mapping_BAM/VCFs/Chloro/ChloroHaploid.vcf
