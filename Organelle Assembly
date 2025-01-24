@@ -1,0 +1,18 @@
+$$$$$$$$$$$$$$$$$$ PMAT
+module load pmat
+module load blast
+
+
+PMAT autoMito -i FASTA.fasta -o ./ -st hifi -g 1G  -m
+
+we get the .gfa file that we disentangle and visualise with Bandage
+
+$$$$$$$$$$$$$FETCHING SRR Ragweed raw PAcbio reads with SRA-Tools. THis is how we got the part of the reads for PMAT.
+
+module load sra-tools
+vdb-dump SRR18458652 -C READ --option-file Nreads.reads -f fasta > SRRagweed_subset.fasta
+
+option file creation
+echo -n "-R " > Nreads.reads && seq 1 4336450 | shuf -n 1000000 | tr '\n' ',' | sed 's/,$/\n/' >> Nreads.reads
+
+#million reads were used for Ragweed,
