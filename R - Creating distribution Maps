@@ -1,0 +1,1031 @@
+```{r Setup}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/PCA_NA/")
+
+# Read the eigenvectors
+
+MitoHapSNPs.NA.eigenvec <- read.table("MitoHapSNPs.NA.eigenvec", header=FALSE)
+ChloroHapSNPs.NA.eigenvec <- read.table("ChloroHapSNPs.NA.eigenvec", header=FALSE)
+MitoHapSNPs.EU.eigenvec <- read.table("MitoHapSNPs.EU.eigenvec", header=FALSE)
+ChloroHapSNPs.EU.eigenvec <- read.table("ChloroHapSNPs.EU.eigenvec", header=FALSE)
+MitoHapSNPs.AUS.eigenvec <- read.table("MitoHapSNPs.AUS.eigenvec", header=FALSE)
+ChloroHapSNPs.AUS.eigenvec <- read.table("ChloroHapSNPs.AUS.eigenvec", header=FALSE)
+
+MitoHapSNPs.NA.eigenval <- read.table("MitoHapSNPs.NA.eigenval", header=FALSE)
+ChloroHapSNPs.NA.eigenval <- read.table("ChloroHapSNPs.NA.eigenval", header=FALSE)
+MitoHapSNPs.EU.eigenval <- read.table("MitoHapSNPs.EU.eigenval", header=FALSE)
+ChloroHapSNPs.EU.eigenval <- read.table("ChloroHapSNPs.EU.eigenval", header=FALSE)
+MitoHapSNPs.AUS.eigenval <- read.table("MitoHapSNPs.AUS.eigenval", header=FALSE)
+ChloroHapSNPs.AUS.eigenval <- read.table("ChloroHapSNPs.AUS.eigenval", header=FALSE)
+# Optionally, you can add column names to the eigenvecs data frame for clarity
+
+colnames(MitoHapSNPs.NA.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.NA.eigenvec)-2)))
+colnames(ChloroHapSNPs.NA.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.NA.eigenvec)-2)))
+colnames(MitoHapSNPs.EU.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.EU.eigenvec)-2)))
+colnames(ChloroHapSNPs.EU.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.EU.eigenvec)-2)))
+colnames(MitoHapSNPs.AUS.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.AUS.eigenvec)-2)))
+colnames(ChloroHapSNPs.AUS.eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(ChloroHapSNPs.AUS.eigenvec)-2)))
+
+library(readxl)
+RagweedSamplesSheet <- read_excel("RagweedSamplesSheet.xlsx")
+library(ggplot2)
+```
+
+```{r Colours}
+library(RColorBrewer)
+
+
+PCA_cluster_colors <- c(
+  "ChNAm1" = brewer.pal(9, "Set1")[1],  # First color in Set1 palette
+  "ChNAm2" = brewer.pal(9, "Set1")[2],  # Second color in Set1 palette
+  "ChNAm3" = brewer.pal(9, "Set1")[4],  # etc.
+  "ChNAm4" = brewer.pal(9, "Set1")[3]
+)
+
+
+MAM_cluster_colors <- c(
+  "MNAm1" = brewer.pal(9, "Set1")[4],  # First color in Set1 palette
+  "MNAm2" = brewer.pal(9, "Set1")[1],  # Second color in Set1 palette
+  "MNAm3" = brewer.pal(9, "Set1")[2],  # etc.
+  "MNAm4" = brewer.pal(9, "Set1")[3]
+)
+
+ChNA_cluster_colors <- c(
+  "ChNAm1" = brewer.pal(9, "Set1")[1],  # First color in Set1 palette
+  "ChNAm2" = brewer.pal(9, "Set1")[2],  # Second color in Set1 palette
+  "ChNAm3" = brewer.pal(9, "Set1")[4],  # etc.
+  "ChNAm4" = brewer.pal(9, "Set1")[3]
+)
+
+ChEU_cluster_colors <- c(
+  "ChEu1" = brewer.pal(9, "Set1")[1],  # First color in Set1 palette
+  "ChEu2" = brewer.pal(9, "Set1")[2],  # Second color in Set1 palette
+  "ChEu3" = brewer.pal(9, "Set1")[4],  # etc.
+  "ChEu4" = brewer.pal(9, "Set1")[3]
+)
+
+MEU_cluster_colors <- c(
+  "MEu1" = brewer.pal(9, "Set1")[4],  # First color in Set1 palette
+  "MEu2" = brewer.pal(9, "Set1")[2],  # Second color in Set1 palette
+  "MEu3" = brewer.pal(9, "Set1")[1],  # etc.
+  "MEu4" = brewer.pal(9, "Set1")[3]
+)
+
+
+ChAus_cluster_colors <- c(
+  "ChAus1" = brewer.pal(9, "Set1")[1],  # First color in Set1 palette
+  "ChAus2" = brewer.pal(9, "Set1")[2],  # Second color in Set1 palette
+  "ChAus3" = brewer.pal(9, "Set1")[3]
+)
+
+MAus_cluster_colors <- c(
+  "MAus1" = brewer.pal(9, "Set1")[1],  # First color in Set1 palette
+  "MAus2" = brewer.pal(9, "Set1")[2],  # Second color in Set1 palette
+  "MAus3" = brewer.pal(9, "Set1")[3]
+)
+```
+
+
+
+```{r PerANTAGE VARIABILTYIES}
+
+# Calculate the total variance
+MitoHapSNPs.NA.total_variance <- sum(MitoHapSNPs.NA.eigenval)
+MitoHapSNPs.EU.total_variance <- sum(MitoHapSNPs.EU.eigenval)
+MitoHapSNPs.AUS.total_variance <- sum(MitoHapSNPs.AUS.eigenval)
+
+# Calculate the percentage of variance explained by each PC
+MitoHapSNPs.NA.percent_variance <- (MitoHapSNPs.NA.eigenval / MitoHapSNPs.NA.total_variance) * 100
+MitoHapSNPs.EU.percent_variance <- (MitoHapSNPs.EU.eigenval / MitoHapSNPs.EU.total_variance) * 100
+MitoHapSNPs.AUS.percent_variance <- (MitoHapSNPs.AUS.eigenval / MitoHapSNPs.AUS.total_variance) * 100
+
+# Extract percentages for PC1 and PC2
+MitoHapSNPs.NA.pc1_variance <- round(MitoHapSNPs.NA.percent_variance[[1]][1], 2)  
+MitoHapSNPs.NA.pc2_variance <- round(MitoHapSNPs.NA.percent_variance[[1]][2], 2)  
+MitoHapSNPs.EU.pc1_variance <- round(MitoHapSNPs.EU.percent_variance[[1]][1], 2)  
+MitoHapSNPs.EU.pc2_variance <- round(MitoHapSNPs.EU.percent_variance[[1]][2], 2)
+MitoHapSNPs.AUS.pc1_variance <- round(MitoHapSNPs.AUS.percent_variance[[1]][1], 2)  
+MitoHapSNPs.AUS.pc2_variance <- round(MitoHapSNPs.AUS.percent_variance[[1]][2], 2)
+
+
+
+
+# Calculate the total variance
+ChloroHapSNPs.NA.total_variance <- sum(ChloroHapSNPs.NA.eigenval)
+ChloroHapSNPs.EU.total_variance <- sum(ChloroHapSNPs.EU.eigenval)
+ChloroHapSNPs.AUS.total_variance <- sum(ChloroHapSNPs.AUS.eigenval)
+
+# Calculate the percentage of variance explained by each PC
+ChloroHapSNPs.NA.percent_variance <- (ChloroHapSNPs.NA.eigenval / ChloroHapSNPs.NA.total_variance) * 100
+ChloroHapSNPs.EU.percent_variance <- (ChloroHapSNPs.EU.eigenval / ChloroHapSNPs.EU.total_variance) * 100
+ChloroHapSNPs.AUS.percent_variance <- (ChloroHapSNPs.AUS.eigenval / ChloroHapSNPs.AUS.total_variance) * 100
+
+# Extract percentages for PC1 and PC2
+ChloroHapSNPs.NA.pc1_variance <- round(ChloroHapSNPs.NA.percent_variance[[1]][1], 2)  
+ChloroHapSNPs.NA.pc2_variance <- round(ChloroHapSNPs.NA.percent_variance[[1]][2], 2)  
+ChloroHapSNPs.EU.pc1_variance <- round(ChloroHapSNPs.EU.percent_variance[[1]][1], 2)  
+ChloroHapSNPs.EU.pc2_variance <- round(ChloroHapSNPs.EU.percent_variance[[1]][2], 2)
+ChloroHapSNPs.AUS.pc1_variance <- round(ChloroHapSNPs.AUS.percent_variance[[1]][1], 2)  
+ChloroHapSNPs.AUS.pc2_variance <- round(ChloroHapSNPs.AUS.percent_variance[[1]][2], 2)
+
+```
+
+```{r "Clustering of NA Mitochondrial Haploid Data, Outgroups removed"}
+
+# Perform K-means clustering (you can set the number of clusters, e.g., k = 3)
+set.seed(133)  # For reproducibility
+k <- 4  # Number of clusters
+MitoHapSNPs.NA.kmeans_result <- kmeans(MitoHapSNPs.NA.eigenvec[, 3:5], centers = k, nstart = 25)
+# Add the cluster assignment to the PCA data
+MitoHapSNPs.NA.eigenvec$Organelle_Cluster <- as.factor(MitoHapSNPs.NA.kmeans_result$cluster)
+# Add Pauls cluster data
+MitoHapSNPs.NA.eigenvec <- merge(MitoHapSNPs.NA.eigenvec, 
+                                  RagweedSamplesSheet[, c("sample ID", "cluster", "collection latitude","population")], 
+                                  by.x = "FID", by.y = "sample ID", 
+                                  all.x = TRUE)
+
+
+
+
+# Perform K-means clustering (you can set the number of clusters, e.g., k = 3)
+set.seed(133)  # For reproducibility
+k <- 4  # Number of clusters
+MitoHapSNPs.EU.kmeans_result <- kmeans(MitoHapSNPs.EU.eigenvec[, 3:5], centers = k, nstart = 25)
+# Add the cluster assignment to the PCA data
+MitoHapSNPs.EU.eigenvec$Organelle_Cluster <- as.factor(MitoHapSNPs.EU.kmeans_result$cluster)
+# Add Pauls cluster data
+MitoHapSNPs.EU.eigenvec <- merge(MitoHapSNPs.EU.eigenvec, 
+                                  RagweedSamplesSheet[, c("sample ID", "cluster", "collection latitude","population")], 
+                                  by.x = "FID", by.y = "sample ID", 
+                                  all.x = TRUE)
+
+
+
+
+
+
+
+# Perform K-means clustering (you can set the number of clusters, e.g., k = 3)
+set.seed(133)  # For reproducibility
+k <- 3  # Number of clusters
+MitoHapSNPs.AUS.kmeans_result <- kmeans(MitoHapSNPs.AUS.eigenvec[, 3:5], centers = k, nstart = 25)
+# Add the cluster assignment to the PCA data
+MitoHapSNPs.AUS.eigenvec$Organelle_Cluster <- as.factor(MitoHapSNPs.AUS.kmeans_result$cluster)
+# Add Pauls cluster data
+MitoHapSNPs.AUS.eigenvec <- merge(MitoHapSNPs.AUS.eigenvec, 
+                                  RagweedSamplesSheet[, c("sample ID", "cluster", "collection latitude","population")], 
+                                  by.x = "FID", by.y = "sample ID", 
+                                  all.x = TRUE)
+
+
+MitoHapSNPs.NA.eigenvec$Organelle_Cluster <- as.character(MitoHapSNPs.NA.eigenvec$Organelle_Cluster)
+MitoHapSNPs.EU.eigenvec$Organelle_Cluster <- as.character(MitoHapSNPs.EU.eigenvec$Organelle_Cluster)
+MitoHapSNPs.AUS.eigenvec$Organelle_Cluster <- as.character(MitoHapSNPs.AUS.eigenvec$Organelle_Cluster)
+
+MitoHapSNPs.NA.eigenvec$Organelle_Cluster[MitoHapSNPs.NA.eigenvec$Organelle_Cluster == 1] <- "MNAm1"
+MitoHapSNPs.NA.eigenvec$Organelle_Cluster[MitoHapSNPs.NA.eigenvec$Organelle_Cluster == 2] <- "MNAm2"
+MitoHapSNPs.NA.eigenvec$Organelle_Cluster[MitoHapSNPs.NA.eigenvec$Organelle_Cluster == 3] <- "MNAm3"
+MitoHapSNPs.NA.eigenvec$Organelle_Cluster[MitoHapSNPs.NA.eigenvec$Organelle_Cluster == 4] <- "MNAm4"
+
+MitoHapSNPs.EU.eigenvec$Organelle_Cluster[MitoHapSNPs.EU.eigenvec$Organelle_Cluster == 1] <- "MEu1"
+MitoHapSNPs.EU.eigenvec$Organelle_Cluster[MitoHapSNPs.EU.eigenvec$Organelle_Cluster == 2] <- "MEu2"
+MitoHapSNPs.EU.eigenvec$Organelle_Cluster[MitoHapSNPs.EU.eigenvec$Organelle_Cluster == 3] <- "MEu3"
+MitoHapSNPs.EU.eigenvec$Organelle_Cluster[MitoHapSNPs.EU.eigenvec$Organelle_Cluster == 4] <- "MEu4"
+
+MitoHapSNPs.AUS.eigenvec$Organelle_Cluster[MitoHapSNPs.AUS.eigenvec$Organelle_Cluster == 1] <- "MAus1"
+MitoHapSNPs.AUS.eigenvec$Organelle_Cluster[MitoHapSNPs.AUS.eigenvec$Organelle_Cluster == 2] <- "MAus2"
+MitoHapSNPs.AUS.eigenvec$Organelle_Cluster[MitoHapSNPs.AUS.eigenvec$Organelle_Cluster == 3] <- "MAus3"
+
+
+
+
+PCA_M_NA_plot=ggplot(MitoHapSNPs.NA.eigenvec, aes(x = PC1, y = PC2, color = Organelle_Cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA Mitochondrial Clustering, North America", x = paste0("PC1 (", MitoHapSNPs.NA.pc1_variance, "%)"), y = paste0("PC2 (", MitoHapSNPs.NA.pc2_variance, "%)"), color = "Organelle Cluster") +
+  scale_color_brewer(palette = "Set1")
+
+
+PCA_M_EU_plot=ggplot(MitoHapSNPs.EU.eigenvec, aes(x = PC1, y = PC2, color = Organelle_Cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA Mitochondrial Clustering, Europe", x = paste0("PC1 (", MitoHapSNPs.EU.pc1_variance, "%)"), y = paste0("PC2 (", MitoHapSNPs.EU.pc2_variance, "%)"), color = "Organelle Cluster") +
+  scale_color_brewer(palette = "Set1") 
+
+
+
+PCA_M_AUS_plot=ggplot(MitoHapSNPs.AUS.eigenvec, aes(x = PC1, y = PC2, color = Organelle_Cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA Mitochondrial Clustering, Australia", x = paste0("PC1 (", MitoHapSNPs.AUS.pc1_variance, "%)"), y = paste0("PC2 (", MitoHapSNPs.AUS.pc2_variance, "%)"), color = "Organelle Cluster") +
+  scale_color_brewer(palette = "Set1") 
+
+
+```
+
+```{r "Clustering of NA Chloroplast Haploid Data, Outgroups removed"}
+# Perform K-means clustering (you can set the number of clusters, e.g., k = 3)
+set.seed(133)  # For reproducibility
+k <- 4  # Number of clusters
+ChloroHapSNPs.NA.kmeans_result <- kmeans(ChloroHapSNPs.NA.eigenvec[, 3:4], centers = k, nstart = 25)
+ChloroHapSNPs.NA.kmeans_result
+# Add the cluster assignment to the PCA data
+ChloroHapSNPs.NA.eigenvec$Organelle_Cluster <- as.factor(ChloroHapSNPs.NA.kmeans_result$cluster)
+# Add Pauls cluster data
+ChloroHapSNPs.NA.eigenvec <- merge(ChloroHapSNPs.NA.eigenvec, 
+                                  RagweedSamplesSheet[, c("sample ID", "cluster", "collection latitude","population")], 
+                                  by.x = "FID", by.y = "sample ID", 
+                                  all.x = TRUE)
+
+
+
+
+# Perform K-means clustering (you can set the number of clusters, e.g., k = 3)
+set.seed(133)  # For reproducibility
+k <- 4  # Number of clusters
+ChloroHapSNPs.EU.kmeans_result <- kmeans(ChloroHapSNPs.EU.eigenvec[, 3:4], centers = k, nstart = 25)
+
+# Add the cluster assignment to the PCA data
+ChloroHapSNPs.EU.eigenvec$Organelle_Cluster <- as.factor(ChloroHapSNPs.EU.kmeans_result$cluster)
+# Add Pauls cluster data
+ChloroHapSNPs.EU.eigenvec <- merge(ChloroHapSNPs.EU.eigenvec, 
+                                  RagweedSamplesSheet[, c("sample ID", "cluster", "collection latitude","population")], 
+                                  by.x = "FID", by.y = "sample ID", 
+                                  all.x = TRUE)
+
+
+
+
+# Perform K-means clustering (you can set the number of clusters, e.g., k = 3)
+set.seed(133)  # For reproducibility
+k <- 3  # Number of clusters
+ChloroHapSNPs.AUS.kmeans_result <- kmeans(ChloroHapSNPs.AUS.eigenvec[, 3:4], centers = k, nstart = 25)
+
+# Add the cluster assignment to the PCA data
+ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster <- as.factor(ChloroHapSNPs.AUS.kmeans_result$cluster)
+# Add Pauls cluster data
+ChloroHapSNPs.AUS.eigenvec <- merge(ChloroHapSNPs.AUS.eigenvec, 
+                                  RagweedSamplesSheet[, c("sample ID", "cluster", "collection latitude","population")], 
+                                  by.x = "FID", by.y = "sample ID", 
+                                  all.x = TRUE)
+
+
+
+ChloroHapSNPs.NA.eigenvec$Organelle_Cluster <- as.character(ChloroHapSNPs.NA.eigenvec$Organelle_Cluster)
+ChloroHapSNPs.EU.eigenvec$Organelle_Cluster <- as.character(ChloroHapSNPs.EU.eigenvec$Organelle_Cluster)
+ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster <- as.character(ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster)
+
+
+ChloroHapSNPs.NA.eigenvec$Organelle_Cluster[ChloroHapSNPs.NA.eigenvec$Organelle_Cluster == 1] <- "ChNAm1"
+ChloroHapSNPs.NA.eigenvec$Organelle_Cluster[ChloroHapSNPs.NA.eigenvec$Organelle_Cluster == 2] <- "ChNAm2"
+ChloroHapSNPs.NA.eigenvec$Organelle_Cluster[ChloroHapSNPs.NA.eigenvec$Organelle_Cluster == 3] <- "ChNAm3"
+ChloroHapSNPs.NA.eigenvec$Organelle_Cluster[ChloroHapSNPs.NA.eigenvec$Organelle_Cluster == 4] <- "ChNAm4"
+
+ChloroHapSNPs.EU.eigenvec$Organelle_Cluster[ChloroHapSNPs.EU.eigenvec$Organelle_Cluster == 1] <- "ChEu1"
+ChloroHapSNPs.EU.eigenvec$Organelle_Cluster[ChloroHapSNPs.EU.eigenvec$Organelle_Cluster == 2] <- "ChEu2"
+ChloroHapSNPs.EU.eigenvec$Organelle_Cluster[ChloroHapSNPs.EU.eigenvec$Organelle_Cluster == 3] <- "ChEu3"
+ChloroHapSNPs.EU.eigenvec$Organelle_Cluster[ChloroHapSNPs.EU.eigenvec$Organelle_Cluster == 4] <- "ChEu4"
+
+ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster[ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster == 1] <- "ChAus1"
+ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster[ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster == 2] <- "ChAus2"
+ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster[ChloroHapSNPs.AUS.eigenvec$Organelle_Cluster == 3] <- "ChAus3"
+
+PCA_CH_NA_plot=ggplot(ChloroHapSNPs.NA.eigenvec, aes(x = PC1, y = PC2, color = Organelle_Cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  scale_color_manual(values = c(PCA_cluster_colors)) +
+  labs(title = "PCA Chloroplast Clustering, North America", x = paste0("PC1 (", ChloroHapSNPs.NA.pc1_variance, "%)"), y = paste0("PC2 (", ChloroHapSNPs.NA.pc2_variance, "%)"), color = "Organelle Cluster") 
+
+
+PCA_CH_EU_plot=ggplot(ChloroHapSNPs.EU.eigenvec, aes(x = PC1, y = PC2, color = Organelle_Cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA Chloroplast Clustering, Europe", x = paste0("PC1 (", ChloroHapSNPs.EU.pc1_variance, "%)"), y = paste0("PC2 (", ChloroHapSNPs.EU.pc2_variance, "%)"), color = "Organelle Cluster") +
+  scale_color_brewer(palette = "Set1")
+
+
+PCA_CH_AUS_plot=ggplot(ChloroHapSNPs.AUS.eigenvec, aes(x = PC1, y = PC2, color = Organelle_Cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.02, height = 0.02) +
+  theme_minimal() +
+  labs(title = "PCA Chloroplast Clustering, Australia", x = paste0("PC1 (", ChloroHapSNPs.AUS.pc1_variance, "%)"), y = paste0("PC2 (", ChloroHapSNPs.AUS.pc2_variance, "%)"), color = "Organelle Cluster") +
+  scale_color_brewer(palette = "Set1")
+```
+
+```{r PCA coloured by Nuclear clusters}
+
+
+ggplot(ChloroHapSNPs.NA.eigenvec, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA NA Chloroplast Clustering", x = "PC1", y = "PC2") +
+  scale_color_brewer(palette = "Set1") 
+
+ggplot(ChloroHapSNPs.EU.eigenvec, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA EU Chloroplast Clustering", x = "PC1", y = "PC2") +
+  scale_color_brewer(palette = "Set1")
+
+ggplot(ChloroHapSNPs.AUS.eigenvec, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.02, height = 0.02) +
+  theme_minimal() +
+  labs(title = "PCA AUS Chloroplast Clustering", x = "PC1", y = "PC2") +
+  scale_color_brewer(palette = "Set1")
+
+ggplot(MitoHapSNPs.NA.eigenvec, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA NA Mitochondrial Clustering", x = "PC1", y = "PC2") +
+  scale_color_brewer(palette = "Set1")
+
+ggplot(MitoHapSNPs.EU.eigenvec, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA Mitochondrial Clustering EU", x = "PC1", y = "PC2") +
+  scale_color_brewer(palette = "Set1") 
+
+ggplot(MitoHapSNPs.AUS.eigenvec, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_jitter(alpha = 0.8, width = 0.01, height = 0.01) +
+  theme_minimal() +
+  labs(title = "PCA Mitochondrial Clustering AUS", x = "PC1", y = "PC2") +
+  scale_color_brewer(palette = "Set1") 
+```
+
+```{r pc1 Colour by lat}
+
+library(ggridges)
+
+ggplot(ChloroHapSNPs.NA.eigenvec, aes(x = PC1, y=NA , color = `collection latitude`)) +
+  geom_jitter(alpha = 1 , width = 0.15, height = 0.15) +
+  theme_minimal() +
+  labs(title = "PCA NA Chloroplast Clustering", x = "PC1") 
+
+ggplot(ChloroHapSNPs.NA.eigenvec, aes(x = PC1, y = as.factor(`collection latitude`), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 2, rel_min_height = 0.01) +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  labs(title = "PC1 Distribution by Collection Latitude NA", x = "PC1", y = "Collection Latitude")
+
+
+ggplot(ChloroHapSNPs.EU.eigenvec, aes(x = PC1, y=NA , color = `collection latitude`)) +
+  geom_jitter(alpha = 1 , width = 0.15, height = 0.15) +
+  theme_minimal() +
+  labs(title = "PCA EU Chloroplast Clustering", x = "PC1") 
+
+ggplot(ChloroHapSNPs.EU.eigenvec, aes(x = PC1, y = as.factor(`collection latitude`), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 2, rel_min_height = 0.01) +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  labs(title = "PC1 Distribution by Collection Latitude EU", x = "PC1", y = "Collection Latitude")
+
+
+ggplot(ChloroHapSNPs.AUS.eigenvec, aes(x = PC1, y=NA , color = `collection latitude`)) +
+  geom_jitter(alpha = 1 , width = 0.15, height = 0.15) +
+  theme_minimal() +
+  labs(title = "PCA AUS Chloroplast Clustering", x = "PC1") 
+
+ggplot(ChloroHapSNPs.AUS.eigenvec, aes(x = PC1, y = as.factor(`collection latitude`), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 2, rel_min_height = 0.01) +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  labs(title = "PC1 Distribution by Collection Latitude AUS", x = "PC1", y = "Collection Latitude")
+
+#MITO
+
+ggplot(MitoHapSNPs.NA.eigenvec, aes(x = PC1, y=NA , color = `collection latitude`)) +
+  geom_jitter(alpha = 1 , width = 0.15, height = 0.15) +
+  theme_minimal() +
+  labs(title = "PCA NA Mitoplast Clustering", x = "PC1") 
+
+ggplot(MitoHapSNPs.NA.eigenvec, aes(x = PC1, y = as.factor(`collection latitude`), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 2, rel_min_height = 0.01) +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  labs(title = "PC1 Distribution by Collection Latitude NA", x = "PC1", y = "Collection Latitude")
+
+
+ggplot(MitoHapSNPs.EU.eigenvec, aes(x = PC1, y=NA , color = `collection latitude`)) +
+  geom_jitter(alpha = 1 , width = 0.15, height = 0.15) +
+  theme_minimal() +
+  labs(title = "PCA EU Mitoplast Clustering", x = "PC1") 
+
+ggplot(MitoHapSNPs.EU.eigenvec, aes(x = PC1, y = as.factor(`collection latitude`), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 2, rel_min_height = 0.01) +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  labs(title = "PC1 Distribution by Collection Latitude EU", x = "PC1", y = "Collection Latitude")
+
+
+ggplot(MitoHapSNPs.AUS.eigenvec, aes(x = PC1, y=NA , color = `collection latitude`)) +
+  geom_jitter(alpha = 1 , width = 0.15, height = 0.15) +
+  theme_minimal() +
+  labs(title = "PCA AUS Mitoplast Clustering", x = "PC1") 
+
+ggplot(MitoHapSNPs.AUS.eigenvec, aes(x = PC1, y = as.factor(`collection latitude`), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 2, rel_min_height = 0.01) +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  labs(title = "PC1 Distribution by Collection Latitude AUS", x = "PC1", y = "Collection Latitude")
+
+
+
+```
+
+```{r AUS PCA populations coloured}
+
+PCA_M_AUS_POP_plot=ggplot(MitoHapSNPs.AUS.eigenvec, aes(x = PC1, y = PC2, color = population)) +
+  geom_jitter(alpha = 1, width = 0.02, height = 0.02, size = 2 ) +
+  theme_minimal() +
+  labs(title = "PCA Mitochondrial Clustering AUS", x = "PC1", y = "PC2", color = "Population") #+
+  #scale_color_brewer(palette = "Set1") 
+print(PCA_M_AUS_POP_plot)
+
+PCA_CH_AUS_POP_plot=ggplot(ChloroHapSNPs.AUS.eigenvec, aes(x = PC1, y = PC2, color = population)) +
+  geom_jitter(alpha = 1, width = 0.025, height = 0.025, size = 1.8 ) +
+  theme_minimal() +
+  labs(title = "PCA Chloroplast Clustering AUS", x = "PC1", y = "PC2", color = "Population") #+
+  #scale_color_brewer(palette = "Set1") 
+print(PCA_CH_AUS_POP_plot)
+```
+
+
+```{r clustering Merging with longitude }
+
+#NA
+
+
+MapHaploidChloroNAPCACluster = merge(
+  ChloroHapSNPs.NA.eigenvec[, c("FID", "Organelle_Cluster")], 
+  RagweedSamplesSheet,
+  by.x = "FID",
+  by.y = "sample ID", 
+  all.x = TRUE, 
+  all.y = TRUE
+)
+MapHaploidChloroNAPCACluster <- MapHaploidChloroNAPCACluster[complete.cases(MapHaploidChloroNAPCACluster[, c("collection longitude", "collection latitude", "Organelle_Cluster")]), ]
+
+MapHaploidMitoNAPCACluster = merge(
+  MitoHapSNPs.NA.eigenvec[, c("FID", "Organelle_Cluster")], 
+  RagweedSamplesSheet,
+  by.x = "FID",
+  by.y = "sample ID", 
+  all.x = TRUE, 
+  all.y = TRUE
+)
+MapHaploidMitoNAPCACluster <- MapHaploidMitoNAPCACluster[complete.cases(MapHaploidMitoNAPCACluster[, c("collection longitude", "collection latitude", "Organelle_Cluster")]), ]
+
+#EU
+
+
+MapHaploidChloroEUPCACluster = merge(
+  ChloroHapSNPs.EU.eigenvec[, c("FID", "Organelle_Cluster")], 
+  RagweedSamplesSheet,
+  by.x = "FID",
+  by.y = "sample ID", 
+  all.x = TRUE, 
+  all.y = TRUE
+)
+MapHaploidChloroEUPCACluster <- MapHaploidChloroEUPCACluster[complete.cases(MapHaploidChloroEUPCACluster[, c("collection longitude", "collection latitude", "Organelle_Cluster")]), ]
+
+MapHaploidMitoEUPCACluster = merge(
+  MitoHapSNPs.EU.eigenvec[, c("FID", "Organelle_Cluster")], 
+  RagweedSamplesSheet,
+  by.x = "FID",
+  by.y = "sample ID", 
+  all.x = TRUE, 
+  all.y = TRUE
+)
+MapHaploidMitoEUPCACluster <- MapHaploidMitoEUPCACluster[complete.cases(MapHaploidMitoEUPCACluster[, c("collection longitude", "collection latitude", "Organelle_Cluster")]), ]
+
+#AUS
+
+
+MapHaploidChloroAUSPCACluster = merge(
+  ChloroHapSNPs.AUS.eigenvec[, c("FID", "Organelle_Cluster")], 
+  RagweedSamplesSheet,
+  by.x = "FID",
+  by.y = "sample ID", 
+  all.x = TRUE, 
+  all.y = TRUE
+)
+MapHaploidChloroAUSPCACluster <- MapHaploidChloroAUSPCACluster[complete.cases(MapHaploidChloroAUSPCACluster[, c("collection longitude", "collection latitude", "Organelle_Cluster")]), ]
+
+MapHaploidMitoAUSPCACluster = merge(
+  MitoHapSNPs.AUS.eigenvec[, c("FID", "Organelle_Cluster")], 
+  RagweedSamplesSheet,
+  by.x = "FID",
+  by.y = "sample ID", 
+  all.x = TRUE, 
+  all.y = TRUE
+)
+MapHaploidMitoAUSPCACluster <- MapHaploidMitoAUSPCACluster[complete.cases(MapHaploidMitoAUSPCACluster[, c("collection longitude", "collection latitude", "Organelle_Cluster")]), ]
+
+
+```
+
+```{r CHLORO Clusters}
+
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+
+Jitter_CH_NA_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = MapHaploidChloroNAPCACluster, 
+              aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  #scale_color_brewer(palette = "Set1") +  # Customize color palette
+  scale_color_manual(values = c("ChNAm1" = "#E41A1C",   # Red for MNAm1
+                                "ChNAm2" = "#377EB8",   # Blue for MNAm2
+                                "ChNAm4" = "#4DAF4A",   # Green for MNAm3
+                                "ChNAm3" = "#984EA3")) +
+  labs(title = "Chloroplast PCA Cluster Distribution, North America",
+       x = "Longitude", y = "Latitude", color = "Organelle Cluster") +
+  coord_sf(xlim = c(-110, -60), ylim = c(24, 55)) +
+  theme_minimal()
+print(Jitter_CH_NA_plot)
+#EU
+
+Jitter_CH_EU_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = MapHaploidChloroEUPCACluster, 
+              aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+              width = 0.5, height = 0.5, size = 1.5, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_manual(values = c("ChEu1" = "#E41A1C",   # Red for MNAm1
+                                "ChEu2" = "#377EB8",   # Blue for MNAm2
+                                "ChEu4" = "#4DAF4A",   # Green for MNAm3
+                                "ChEu3" = "#984EA3")) +  # Customize color palette
+  labs(title = "Chloroplast PCA Cluster Distribution, Europe",
+       x = "Longitude", y = "Latitude", color = "Organelle Cluster") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) +
+  theme_minimal()
+print(Jitter_CH_EU_plot)
+
+#AUS
+
+Jitter_CH_AUS_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = MapHaploidChloroAUSPCACluster, 
+              aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_brewer(palette = "Set1") +  # Customize color palette
+  labs(title = "Chloroplast PCA Cluster Distribution, AUS",
+       x = "Longitude", y = "Latitude", color = "Organelle Cluster") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + 
+  theme_minimal()
+
+```
+
+```{r MITO Clusters}
+
+MapHaploidMitoNAPCACluster$Organelle_Cluster <- factor(MapHaploidMitoNAPCACluster$Organelle_Cluster,
+                       levels = c("MNAm1", "MNAm2", "MNAm3", "MNAm4"))
+
+
+Jitter_M_NA_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = MapHaploidMitoNAPCACluster, 
+              aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+     #scale_color_brewer(palette = "Set1") +# Customize color palette
+    scale_color_manual(values = c("MNAm2" = "#E41A1C",   # Red for MNAm1
+                                "MNAm3" = "#377EB8",   # Blue for MNAm2
+                                "MNAm4" = "#4DAF4A",   # Green for MNAm3
+                                "MNAm1" = "#984EA3")) +  # Purple for MNAm4
+
+  labs(title = "Mitochondrion PCA Cluster Distribution, North America ",
+       x = "Longitude", y = "Latitude", color = "Organelle Cluster") +
+  coord_sf(xlim = c(-110, -60), ylim = c(24, 55)) +
+  theme_minimal()
+print(Jitter_M_NA_plot)
+
+#EU
+
+Jitter_M_EU_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = MapHaploidMitoEUPCACluster, 
+              aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+              width = 0.5, height = 0.5, size = 1.5, alpha = 0.7) +
+  #geom_point(data = MapHaploidMitoNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_manual(values = c("MEu3" = "#E41A1C",   # Red for MNAm1
+                                "MEu2" = "#377EB8",   # Blue for MNAm2
+                                "MEu4" = "#4DAF4A",   # Green for MNAm3
+                                "MEu1" = "#984EA3")) +  # Purple for MNAm4  # Customize color palette
+  labs(title = "Mitochondrion PCA Cluster Distribution, Europe",
+       x = "Longitude", y = "Latitude", color = "Organelle Cluster") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) +
+  theme_minimal()
+print(Jitter_M_EU_plot)
+#AUS
+
+Jitter_M_AUS_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = MapHaploidMitoAUSPCACluster, 
+              aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidMitoNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_brewer(palette = "Set1") +  # Customize color palette
+  labs(title = "Mitochondrion PCA Cluster Distribution, Australia",
+       x = "Longitude", y = "Latitude", color = "Organelle Cluster") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + 
+  theme_minimal()
+print(Jitter_M_AUS_plot)
+```
+
+
+
+```{r Pie chart plots NA}
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+library(dplyr)
+library(tidyr)
+
+
+
+
+Chloro_pop_NAsummary <- MapHaploidChloroNAPCACluster %>%  filter(!is.na(Organelle_Cluster)) %>%
+  group_by(`collection latitude`, `collection longitude`, Organelle_Cluster) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection latitude`, `collection longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Mito_pop_NAsummary <- MapHaploidMitoNAPCACluster %>%  filter(!is.na(Organelle_Cluster)) %>% 
+  group_by(`collection latitude`, `collection longitude`, Organelle_Cluster) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection latitude`, `collection longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Chloro_pop_pie_NAdata <- Chloro_pop_NAsummary %>%
+  pivot_wider(names_from = Organelle_Cluster, values_from = proportion, values_fill = 0)
+
+Mito_pop_pie_NAdata <- Mito_pop_NAsummary %>%
+  pivot_wider(names_from = Organelle_Cluster, values_from = proportion, values_fill = 0)
+
+Chloro_pop_pie_NAdata <- Chloro_pop_pie_NAdata %>%
+  rename( latitude = `collection latitude`, longitude = `collection longitude`)
+Mito_pop_pie_NAdata <- Mito_pop_pie_NAdata %>%
+  rename( latitude = `collection latitude`, longitude = `collection longitude`)
+```
+
+```{r Pie chart plots NA}
+
+Chloro_pop_pie_NAdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_pop_pie_NAdata, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_pop_pie_NAdata)[5:ncol(Chloro_pop_pie_NAdata)],  # Specify the cluster columns
+                  pie_scale = 0.7, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = ChNA_cluster_colors) +  # Customize pie chart colors
+ 
+  labs(title = "Chloroplast Cluster Distribution, North America",
+       x = "Longitude", y = "Latitude", fill = "Organelle Cluster") +
+  coord_sf(xlim = c(-110, -65), ylim = c(24, 50)) +  # Focus on the USA
+  theme_minimal()
+print(Chloro_pop_pie_NAdata_plot)
+
+
+  Mito_pop_pie_NAdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_pop_pie_NAdata, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_pop_pie_NAdata)[5:ncol(Mito_pop_pie_NAdata)],  # Specify the cluster columns
+                  pie_scale = 0.7, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = MAM_cluster_colors) +   # Customize pie chart colors
+  labs(title = "Mitochondrial PCA Cluster Distribution, North America",
+       x = "Longitude", y = "Latitude", fill = "Organelle Cluster") +
+  coord_sf(xlim = c(-110, -65), ylim = c(24, 50)) + # Focus on the USA
+  theme_minimal()
+print(Mito_pop_pie_NAdata_plot)
+
+```
+
+```{r Pie chart plots EU Setup}
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+library(dplyr)
+library(tidyr)
+
+
+
+
+Chloro_pop_EUsummary <- MapHaploidChloroEUPCACluster %>%  filter(!is.na(Organelle_Cluster)) %>%
+  group_by(`collection latitude`, `collection longitude`, Organelle_Cluster) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection latitude`, `collection longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Mito_pop_EUsummary <- MapHaploidMitoEUPCACluster %>%  filter(!is.na(Organelle_Cluster)) %>% 
+  group_by(`collection latitude`, `collection longitude`, Organelle_Cluster) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection latitude`, `collection longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Chloro_pop_pie_EUdata <- Chloro_pop_EUsummary %>%
+  pivot_wider(names_from = Organelle_Cluster, values_from = proportion, values_fill = 0)
+
+Mito_pop_pie_EUdata <- Mito_pop_EUsummary %>%
+  pivot_wider(names_from = Organelle_Cluster, values_from = proportion, values_fill = 0)
+
+Chloro_pop_pie_EUdata <- Chloro_pop_pie_EUdata %>%
+  rename( latitude = `collection latitude`, longitude = `collection longitude`)
+Mito_pop_pie_EUdata <- Mito_pop_pie_EUdata %>%
+  rename( latitude = `collection latitude`, longitude = `collection longitude`)
+```
+
+
+```{r Pie chart plots EU}
+Chloro_pop_pie_EUdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_pop_pie_EUdata, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_pop_pie_EUdata)[5:ncol(Chloro_pop_pie_EUdata)],  # Specify the cluster columns
+                  pie_scale = 0.9, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_brewer(palette = "Set1") +  # Customize pie chart colors
+  scale_fill_manual(values = ChEU_cluster_colors) +
+  labs(title = "Chloroplast PCA Cluster Distribution, Europe",
+       x = "Longitude", y = "Latitude", fill = "Organelle Cluster") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) +  # Focus on the Eu
+  theme_minimal()
+print(Chloro_pop_pie_EUdata_plot)
+
+
+  Mito_pop_pie_EUdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_pop_pie_EUdata, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_pop_pie_EUdata)[5:ncol(Mito_pop_pie_EUdata)],  # Specify the cluster columns
+                  pie_scale = 0.9, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_brewer(palette = "Set1") +  # Customize pie chart colors
+    scale_fill_manual(values = MEU_cluster_colors) +
+  labs(title = "Mitochondrial PCA Cluster Distribution, Europe",
+       x = "Longitude", y = "Latitude", fill = "Organelle Cluster") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) + # Focus on the eu
+  theme_minimal()
+print(Mito_pop_pie_EUdata_plot)
+
+```
+
+```{r Pie chart plots AUS}
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+library(dplyr)
+library(tidyr)
+library(ggrepel)
+
+
+
+
+Chloro_pop_AUSsummary <- MapHaploidChloroAUSPCACluster %>%  filter(!is.na(Organelle_Cluster)) %>%
+  group_by(`collection latitude`, `collection longitude`, Organelle_Cluster) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection latitude`, `collection longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Mito_pop_AUSsummary <- MapHaploidMitoAUSPCACluster %>%  filter(!is.na(Organelle_Cluster)) %>% 
+  group_by(`collection latitude`, `collection longitude`, Organelle_Cluster) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection latitude`, `collection longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Chloro_pop_pie_AUSdata <- Chloro_pop_AUSsummary %>%
+  pivot_wider(names_from = Organelle_Cluster, values_from = proportion, values_fill = 0)
+
+Mito_pop_pie_AUSdata <- Mito_pop_AUSsummary %>%
+  pivot_wider(names_from = Organelle_Cluster, values_from = proportion, values_fill = 0)
+
+Chloro_pop_pie_AUSdata <- Chloro_pop_pie_AUSdata %>%
+  rename( latitude = `collection latitude`, longitude = `collection longitude`)
+Mito_pop_pie_AUSdata <- Mito_pop_pie_AUSdata %>%
+  rename( latitude = `collection latitude`, longitude = `collection longitude`)
+```
+
+
+```{r Pie chart plots AUS}
+
+Chloro_pop_pie_AUSdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_pop_pie_AUSdata, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_pop_pie_AUSdata)[5:ncol(Chloro_pop_pie_AUSdata)],  # Specify the cluster columns
+                  pie_scale = 6, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_brewer(palette = "Set1") +  # Customize pie chart colors
+    scale_fill_manual(values = ChAus_cluster_colors) +
+  labs(title = "Chloroplast PCA Cluster Distribution, Australia",
+       x = "Longitude", y = "Latitude", fill = "Organelle Cluster") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) +  # Focus on the AUS
+  theme_minimal()
+print(Chloro_pop_pie_AUSdata_plot)
+
+
+  Mito_pop_pie_AUSdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_pop_pie_AUSdata, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_pop_pie_AUSdata)[5:ncol(Mito_pop_pie_AUSdata)],  # Specify the cluster columns
+                  pie_scale = 6, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_brewer(palette = "Set1") +  # Customize pie chart colors
+     scale_fill_manual(values = MAus_cluster_colors) +
+  labs(title = "Mitochondrial PCA Cluster Distribution, Australia",
+       x = "Longitude", y = "Latitude", fill = "Organelle Cluster") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + # Focus on the AUS
+  theme_minimal()
+print(Mito_pop_pie_AUSdata_plot)
+
+```
+
+```{r Maps with population names}
+unique_populations <- RagweedSamplesSheet %>%
+  distinct(population, .keep_all = TRUE) %>%
+  select(population, 'collection longitude', 'collection latitude')
+
+unique_populations  <- unique_populations %>% filter(population != "-")
+
+
+MapNA=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # World map as background
+  geom_point(data = unique_populations, 
+             aes(x = `collection longitude`, y = `collection latitude`), size = 1.5, alpha = 0.7) +
+  geom_text_repel(data = unique_populations, 
+                  aes(x = `collection longitude`, y = `collection latitude`, label = population), size = 2, 
+               box.padding = 0.8,  # Adjusts space around labels
+              point.padding = 0.8,  # Adjusts space around points
+             segment.color = "black",  # Color for the connecting lines
+         segment.size = 0.5,  # Thickness of the lines
+       arrow = arrow(length = unit(0.01, "npc")),  # Adds an arrow to the line
+    max.overlaps = 50) +  # Increase this value if you want to allow more overlaps
+  labs(title = "Map with Population Names, NA",
+       x = "Longitude", y = "Latitude") +
+  coord_sf(xlim = c(-110, -60), ylim = c(24, 55)) +
+  theme_minimal()
+
+
+
+
+MapEU=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # World map as background
+  geom_point(data = unique_populations, 
+             aes(x = `collection longitude`, y = `collection latitude`), size = 1.5, alpha = 0.7) +
+  geom_text_repel(data = unique_populations, 
+                  aes(x = `collection longitude`, y = `collection latitude`, label = population), size = 2, 
+               box.padding = 0.8,  # Adjusts space around labels
+              point.padding = 0.8,  # Adjusts space around points
+             segment.color = "black",  # Color for the connecting lines
+         segment.size = 0.5,  # Thickness of the lines
+       arrow = arrow(length = unit(0.01, "npc")),  # Adds an arrow to the line
+    max.overlaps = 50) +  # Increase this value if you want to allow more overlaps
+  labs(title = "Map with Population Names, EU",
+       x = "Longitude", y = "Latitude") +
+coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) +
+  theme_minimal()
+
+
+
+
+MapAUS=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # World map as background
+  geom_point(data = unique_populations, 
+             aes(x = `collection longitude`, y = `collection latitude`), size = 1.5, alpha = 0.7) +
+  geom_text_repel(data = unique_populations, 
+                  aes(x = `collection longitude`, y = `collection latitude`, label = population), size = 2, 
+               box.padding = 0.5,  # Adjusts space around labels
+              point.padding = 0.3,  # Adjusts space around points
+             segment.color = "black",  # Color for the connecting lines
+         segment.size = 0.5,  # Thickness of the lines
+       arrow = arrow(length = unit(0.01, "npc")),  # Adds an arrow to the line
+    max.overlaps = 50) +  # Increase this value if you want to allow more overlaps
+  labs(title = "Map with Population Names, AUS",
+       x = "Longitude", y = "Latitude") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) +
+  theme_minimal()
+
+```
+
+```{r "PDF"}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+library(gridExtra)
+
+pdf(file = "PCAs Ranges.pdf",
+  width = 13,
+  height = 17,
+  useDingbats=FALSE)
+grid.arrange(PCA_CH_NA_plot, PCA_M_NA_plot,PCA_CH_EU_plot, PCA_M_EU_plot, PCA_CH_AUS_plot,   PCA_M_AUS_plot,  nrow = 3)
+dev.off()
+```
+
+
+```{r "PDF"}
+
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+pdf(file = "JitterMapPCAs.pdf",
+  width = 16,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Jitter_CH_NA_plot, Jitter_M_NA_plot, Jitter_CH_EU_plot,Jitter_M_EU_plot, Jitter_CH_AUS_plot,   Jitter_M_AUS_plot,  nrow = 3)
+dev.off()
+```
+
+
+```{r "PDF"}
+
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+pdf(file = "PiechartCLUSTERMaps.pdf",
+  width = 16,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Chloro_pop_pie_NAdata_plot, Mito_pop_pie_NAdata_plot, Chloro_pop_pie_EUdata_plot,Mito_pop_pie_EUdata_plot, Chloro_pop_pie_AUSdata_plot,   Mito_pop_pie_AUSdata_plot,  nrow = 3)
+dev.off()
+
+```
+
+```{r "PDF"}
+
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+pdf(file = "PCAADDon.pdf",
+  width = 20,
+  height = 10.5,
+  useDingbats=FALSE)
+layoutADDON <- rbind(c(1, 2, NA),   # 1st row: Place the first two plots, leave the 3rd space empty
+                c(3, 4, 5)) 
+grid.arrange(PCA_M_AUS_POP_plot, PCA_CH_AUS_POP_plot, MapNA, MapEU, MapAUS, layout_matrix = layoutADDON)
+
+dev.off()
+
+```
+
+```{r ALL PIES FOR RANGES SEPARATED}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+library(gridExtra)
+
+pdf(file = "PiechartNA.pdf",
+  width = 16,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Chloro_pop_pie_NAdata_plot, Mito_pop_pie_NAdata_plot,Chloro_Clade_pie_NAdata_plot, Mito_Clade_pie_NAdata_plot,Chloro_Network_pie_NAdata_plot, Mito_Network_pie_NAdata_plot,   nrow = 3)
+dev.off()
+
+pdf(file = "PiechartEU.pdf",
+  width = 16,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Chloro_pop_pie_EUdata_plot,Mito_pop_pie_EUdata_plot, Chloro_Clade_pie_EUdata_plot, Mito_Clade_pie_EUdata_plot, Chloro_Network_pie_EUdata_plot, Mito_Network_pie_EUdata_plot,  nrow = 3)
+dev.off()
+
+pdf(file = "PiechartAUS.pdf",
+  width = 13,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Chloro_pop_pie_AUSdata_plot,   Mito_pop_pie_AUSdata_plot, Chloro_Clade_pie_AUSdata_plot, Mito_Clade_pie_AUSdata_plot,  Chloro_Network_pie_AUSdata_plot, Mito_Network_pie_AUSdata_plot,  nrow = 3)
+dev.off()
+
+
+
+```
