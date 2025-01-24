@@ -1,0 +1,624 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(ggtree)
+library(ggplot2)
+library(ape)
+
+
+
+
+```
+
+```{r set wd}
+
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/Fasta in Drevesa/")
+
+
+
+```
+
+```{r}
+
+
+Mito_combined_eigenvec <- rbind(MitoHapSNPs.NA.eigenvec, MitoHapSNPs.EU.eigenvec, MitoHapSNPs.AUS.eigenvec)
+
+Chloro_combined_eigenvec <- rbind(ChloroHapSNPs.NA.eigenvec, ChloroHapSNPs.EU.eigenvec, ChloroHapSNPs.AUS.eigenvec)
+
+```
+
+```{r}
+
+Chloro_tree_1 <- read.tree("Chloro_phylo_tree.raxml.bestTreeCollapsed")
+Chloro_tree_1 <- root(Chloro_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+
+Mito_tree_1 <- read.tree("Mito_phylo_tree.raxml.bestTree")
+Mito_tree_1 <- root(Mito_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+
+
+NA_Mito_tree_1 <- read.tree("NA_Alligned_MITO.fasta_phylo_tree.raxml.bestTree")
+NA_Mito_tree_1 <- root(NA_Mito_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+EU_Mito_tree_1 <- read.tree("EU_Alligned_MITO.fasta_phylo_tree.raxml.bestTree")
+EU_Mito_tree_1 <- root(EU_Mito_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+AUS_Mito_tree_1 <- read.tree("AUS_Alligned_MITO.fasta_phylo_tree.raxml.bestTree")
+AUS_Mito_tree_1 <- root(AUS_Mito_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+
+
+NA_Chloro_tree_1 <- read.tree("NA_Alligned_CHLORO.fasta_phylo_tree.raxml.bestTree")
+NA_Chloro_tree_1 <- root(NA_Chloro_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+EU_Chloro_tree_1 <- read.tree("EU_Alligned_CHLORO.fasta_phylo_tree.raxml.bestTree")
+EU_Chloro_tree_1 <- root(EU_Chloro_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+AUS_Chloro_tree_1 <- read.tree("AUS_Alligned_CHLORO.fasta_phylo_tree.raxml.bestTree")
+AUS_Chloro_tree_1 <- root(AUS_Chloro_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+
+
+
+Chloro_tree_support <- read.tree("Chloro_phylo_tree.raxml.support")
+Chloro_tree_support <- root(Chloro_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+
+Mito_tree_support <- read.tree("Mito_phylo_tree.raxml.support")
+Mito_tree_support <- root(Mito_tree_1, outgroup = "Ambrosia_canescens", resolve.root = TRUE)
+
+
+
+library(readxl)
+Chloro_Clade <- read_excel("Chloro Clades.xlsx")
+Mito_Clade <- read_excel("Mito Clades.xlsx")
+```
+
+```{r TRY OUTS}
+
+
+
+```
+
+
+```{r METADATA}
+
+
+
+Chloro1_tip_metadata <- data.frame(
+  label = Chloro_tree_1$tip.label, # Tree tip labels
+  
+  cluster = RagweedSamplesSheet$cluster[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  # Match tip labels to FID in the data
+  range = RagweedSamplesSheet$range[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  
+  population = RagweedSamplesSheet$population[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  
+'collection latitude' = RagweedSamplesSheet$'collection latitude'[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],
+  'collection longitude' = RagweedSamplesSheet$'collection longitude'[match(Chloro_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],
+  Organelle_cluster = Chloro_combined_eigenvec$Organelle_Cluster[match(Chloro_tree_1$tip.label, Chloro_combined_eigenvec$FID)],
+  
+  Chloro_clade = Chloro_Clade$'Chloro Clade'[match(Chloro_tree_1$tip.label, Chloro_Clade$Sample)]
+  
+  )
+
+
+Mito1_tip_metadata <- data.frame(
+  label = Mito_tree_1$tip.label, # Tree tip labels
+  
+  cluster = RagweedSamplesSheet$cluster[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  # Match tip labels to FID in the data
+  range = RagweedSamplesSheet$range[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  
+  population = RagweedSamplesSheet$population[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],  'collection latitude' = RagweedSamplesSheet$'collection latitude'[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],
+  'collection longitude' = RagweedSamplesSheet$'collection longitude'[match(Mito_tree_1$tip.label, RagweedSamplesSheet$`sample ID`)],
+  Organelle_cluster = Mito_combined_eigenvec$Organelle_Cluster[match(Mito_tree_1$tip.label, Mito_combined_eigenvec$FID)],
+  
+  Mito_clade = Mito_Clade$'Mito Clade'[match(Mito_tree_1$tip.label, Mito_Clade$Sample)]
+  
+  )
+
+
+
+```
+
+```{r Just trees mark outgroups}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+OUTC <- ggtree(Chloro_tree_1) %<+% Chloro1_tip_metadata +  
+  geom_tiplab(aes(color = label)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+   scale_color_manual(values = c("Ambrosia_crithmilifolia" = "#E41A1C","Ambrosia_hispida" = "#E41A1C","Ambrosia_artemisioides" = "#E41A1C","Ambrosia_canescens" = "#E41A1C","Ambrosia_pinnatifida" = "#E41A1C","Ambrosia_trifida_var_texana" = "#E41A1C","Ambrosia_trifida" = "#E41A1C" )) +
+  #xlim(0, max(Chloro_tree_1$edge.length) * 0.5)+
+  labs(title = "ML tree of Haploid Chloroplast Fasta, Outgroups coloured", color = "Outgroups" ) +
+theme_tree2(legend.title = element_text(size = 22), legend.text = element_text(size = 22)) +
+guides(color = guide_legend(override.aes = list(size = 15)))
+
+
+print(OUTC)
+ggsave("Chloro_Just_a_tree_.png", plot = OUTC, width = 30, height = 60, limitsize = FALSE)
+
+
+OUTM <- ggtree(Mito_tree_1) %<+% Mito1_tip_metadata +  
+  geom_tiplab(aes(color = label)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+   scale_color_manual(values = c("Ambrosia_crithmilifolia" = "#E41A1C","Ambrosia_hispida" = "#E41A1C","Ambrosia_artemisioides" = "#E41A1C","Ambrosia_canescens" = "#E41A1C","Ambrosia_pinnatifida" = "#E41A1C","Ambrosia_trifida_var_texana" = "#E41A1C","Ambrosia_trifida" = "#E41A1C" )) +
+  #xlim(0, max(Mito_tree_1$edge.length) * 0.5)+
+  labs(title = "ML tree of Haploid MitoChondria Fasta, Outgroups coloured", color = "Outgroups" ) +
+theme_tree2(legend.title = element_text(size = 22), legend.text = element_text(size = 22)) +
+guides(color = guide_legend(override.aes = list(size = 15)))
+
+
+print(OUTM)
+ggsave("Mito_Just_a_tree_.png", plot = OUTM, width = 30, height = 60, limitsize = FALSE)
+```
+
+```{r Tree CHLORO Clusters}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+C <- ggtree(Chloro_tree_1) %<+% Chloro1_tip_metadata +  
+  geom_tiplab(aes(color = Organelle_cluster)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+   scale_color_manual(values = c("ChAus1" = "#333FFF", "ChEu1" = "#FF3300", "ChNAm1"="#FF6600", "ChAus2"= "#33FF00", "ChEu2" = "#CCFF33", "ChNAm2"= "#009900", "ChAus3" = "#66CCFF", "ChNAm3"= "#FF33FF", "ChEu3" = "#9900cc", "ChEu4" = "#333399","ChNAm4"= "#66cc66" )) +  # Customize colors 
+  xlim(0, max(Chloro_tree_1$edge.length) * 0.5)+
+  labs(title = "ML tree of Haploid Chloroplast Fasta, PCA clusters coloured", color = "Organelle Cluster" ) +
+theme_tree2(legend.title = element_text(size = 22), legend.text = element_text(size = 22)) +
+guides(color = guide_legend(override.aes = list(size = 15)))
+
+
+print(C)
+ggsave("Chloro_tree_Clusters_1.png", plot = C, width = 30, height = 60, limitsize = FALSE)
+
+
+
+```
+
+```{r  Tree MITO Clusters}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+M <- ggtree(Mito_tree_1) %<+% Mito1_tip_metadata +  
+  geom_tiplab(aes(colour = Organelle_cluster), size = 6) +  # Use color for 'cluster', shape for 'population', size for 'region'
+ scale_color_manual(values = c("MAus1" = "#333FFF", "MAus2"= "#009999", "MAus3" = "#66CCFF", "MNAm1"="#FF6600","MEu2" = "#9900cc", "MEu1" = "#FF3300", "MNAm2"= "yellow","MNAm3"= "#FF33FF", "MNAm4"= "#33FF00", "MEu3" = "#009900","MEu4" = "#66cc66"  ))+
+theme_tree2(legend.title = element_text(size = 22), legend.text = element_text(size = 22)) +
+   labs(title = "ML tree of Haploid Chloroplast Fasta, PCA clusters coloured", color = "Organelle Cluster" ) +
+guides(color = guide_legend(override.aes = list(size = 15)))
+
+
+
+print(M)
+ggsave("Mito_tree_Clusters_1.png", plot = M, width = 30, height = 60, limitsize = FALSE)
+```
+
+```{r CLADED TTREEs MITO AN CHLORO}
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+CC <- ggtree(Chloro_tree_1) %<+% Chloro1_tip_metadata +  
+  geom_tiplab(aes(color = Chloro_clade)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+     scale_color_manual(values = c("CL5" = "#E41A1C",   # Red for MNAm1
+                                "CL6" = "#377EB8",   # Blue for MNAm2
+                                "CL4" = "#4DAF4A",   # Green for MNAm3
+                                "CL3" = "#FF7F00",   # Blue for MNAm2
+                                "CL2" = "#F781BF",   # Green for MNAm3
+                                "CL1" = "#984EA3")) +# Customize colors 
+  #xlim(0, max(Chloro_tree_1$edge.length) * 0.5)+
+  labs(title = "ML Tree of Haploid Chloroplast Fasta",
+         color = "Organelle Clade") +
+theme_tree2(legend.title = element_text(size = 22), legend.text = element_text(size = 22)) +
+guides(color = guide_legend(override.aes = list(size = 15)))
+ 
+
+print(CC)
+ggsave("Chloro_tree_Clades_1.png", plot = CC, width = 30, height = 60, limitsize = FALSE)
+```
+
+
+```{r CLADED TTREEs MITO AN CHLORO}
+
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+MC <- ggtree(Mito_tree_1) %<+% Mito1_tip_metadata +  
+  geom_tiplab(aes(color = Mito_clade), size=6) +  # Use color for 'cluster', shape for 'population', size for 'region'
+     scale_color_manual(values = c("MT3" = "#E41A1C",   # Red for MNAm1
+                                "MT2" = "#377EB8",   # Blue for MNAm2
+                                "MT6" = "#4DAF4A",   # Green for MNAm3
+                                "MT5" = "#FF7F00",   # Blue for MNAm2
+                                "MT1" = "#F781BF",   # Green for MNAm3
+                                "MT4" = "#984EA3")) + # Customize colors 
+  #xlim(0, max(Mito_tree_1$edge.length) * 0.5)+
+  labs(title = "ML Tree of Haploid Mitochondrial Fasta",
+         color = "Organelle Clade") +
+theme_tree2(legend.title = element_text(size = 22), legend.text = element_text(size = 22)) +
+guides(color = guide_legend(override.aes = list(size = 15)))
+ 
+
+
+print(MC)
+ggsave("Mito_tree_Clades_1.png", plot = MC, width = 30, height = 60, limitsize = FALSE)
+```
+
+```{r Trees CONTINENTS SEPARATED, eval=FALSE}
+
+NAM <- ggtree(NA_Mito_tree_1) %<+% Mito1_tip_metadata +  
+  geom_tiplab(aes(color = Organelle_cluster)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+theme_tree2() 
+
+
+print(NAM)
+ggsave("NA_Mito_tree_1.png", plot = NAM, width = 30, height = 60, limitsize = FALSE)
+
+NAC <- ggtree(NA_Chloro_tree_1) %<+% Chloro1_tip_metadata +  
+  geom_tiplab(aes(color = Organelle_cluster)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+theme_tree2() 
+
+
+print(NAC)
+ggsave("NA_Chloro_tree_1.png", plot = NAC, width = 30, height = 60, limitsize = FALSE)
+
+
+EUM <- ggtree(EU_Mito_tree_1) %<+% Mito1_tip_metadata +  
+  geom_tiplab(aes(color = Organelle_cluster)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+theme_tree2() 
+
+
+print(EUM)
+ggsave("EU_Mito_tree_1.png", plot = EUM, width = 30, height = 60, limitsize = FALSE)
+
+EUC <- ggtree(EU_Chloro_tree_1) %<+% Chloro1_tip_metadata +  
+  geom_tiplab(aes(color = Organelle_cluster)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+theme_tree2() 
+
+
+print(EUC)
+ggsave("EU_Chloro_tree_1.png", plot = EUC, width = 30, height = 60, limitsize = FALSE)
+
+
+AUSM <- ggtree(AUS_Mito_tree_1) %<+% Mito1_tip_metadata +  
+  geom_tiplab(aes(color = Organelle_cluster)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+theme_tree2() 
+
+
+print(AUSM)
+ggsave("AUS_Mito_tree_1.png", plot = AUSM, width = 30, height = 60, limitsize = FALSE)
+
+AUSC <- ggtree(AUS_Chloro_tree_1) %<+% Chloro1_tip_metadata +  
+  geom_tiplab(aes(color = Organelle_cluster)) +  # Use color for 'cluster', shape for 'population', size for 'region'
+theme_tree2() 
+
+
+print(AUSC)
+ggsave("AUS_Chloro_tree_1.png", plot = AUSC, width = 30, height = 60, limitsize = FALSE)
+```
+
+```{r Pie chart plots MITO setup}
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+library(dplyr)
+library(tidyr)
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+
+
+
+Mito_Clade_summary <- Mito1_tip_metadata %>%  filter(!is.na(Mito_clade)) %>%
+  group_by(`collection.latitude`, `collection.longitude`, Mito_clade) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection.latitude`, `collection.longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Mito_Clade_pie_data <- Mito_Clade_summary %>%
+  pivot_wider(names_from = Mito_clade, values_from = proportion, values_fill = 0)
+
+Mito_Clade_pie_data <- Mito_Clade_pie_data %>%
+  rename( latitude = `collection.latitude`, longitude = `collection.longitude`)
+```
+
+```{r COLOURS}
+
+library(RColorBrewer)
+
+M_CLADE_colors <- c(
+  "MT1" = brewer.pal(9, "Set1")[8],  # First color in Set1 palette
+  "MT2" = brewer.pal(9, "Set1")[2],  # Second color in Set1 palette
+  "MT3" = brewer.pal(9, "Set1")[1], 
+  "MT4" = brewer.pal(9, "Set1")[4],
+  "MT5" = brewer.pal(9, "Set1")[5],
+  "MT6" = brewer.pal(9, "Set1")[3],
+  "MT7" = brewer.pal(9, "Set1")[2]
+)
+
+
+C_CLADE_colors <- c(
+  "CL1" = brewer.pal(9, "Set1")[4],  # First color in Set1 palette
+  "CL2" = brewer.pal(9, "Set1")[8],  # Second color in Set1 palette
+  "CL3" = brewer.pal(9, "Set1")[5], 
+  "CL4" = brewer.pal(9, "Set1")[3],
+  "CL5" = brewer.pal(9, "Set1")[1],
+  "CL6" = brewer.pal(9, "Set1")[2]
+)
+```
+
+```{r Pie chart plots MITO}
+
+Mito_Clade_pie_NAdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_Clade_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_Clade_pie_data)[5:ncol(Mito_Clade_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.1, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = M_CLADE_colors) +
+  labs(title = "Mitochondrial Phylogenetic Clade Distribution, North America",
+       x = "Longitude", y = "Latitude", fill = "Clade") +
+  coord_sf(xlim = c(-110, -65), ylim = c(24, 50)) + # Focus on the USA
+  theme_minimal()
+print(Mito_Clade_pie_NAdata_plot)
+
+
+
+Mito_Clade_pie_EUdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_Clade_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_Clade_pie_data)[5:ncol(Mito_Clade_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.1, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = M_CLADE_colors) +
+  labs(title = "Mitochondrial Phylogenetic Clade Distribution, Europe",
+       x = "Longitude", y = "Latitude", fill = "Clade") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) + # Focus on the eu
+  theme_minimal()
+print(Mito_Clade_pie_EUdata_plot)
+
+
+
+Mito_Clade_pie_AUSdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Mito_Clade_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Mito_Clade_pie_data)[5:ncol(Mito_Clade_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.08, 
+                  color = NA) +  # Adjust pie size
+   scale_fill_manual(values = M_CLADE_colors) +
+  labs(title = "Mitochondrial Phylogenetic Clade Distribution, Australia",
+       x = "Longitude", y = "Latitude", fill = "Clade") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + # Focus on the eu
+  theme_minimal()
+print(Mito_Clade_pie_AUSdata_plot)
+```
+
+```{r Pie chart plots Chloro setup}
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+library(dplyr)
+library(tidyr)
+
+
+
+
+Chloro_Clade_summary <- Chloro1_tip_metadata %>%  filter(!is.na(Chloro_clade)) %>%
+  group_by(`collection.latitude`, `collection.longitude`, Chloro_clade) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(`collection.latitude`, `collection.longitude`) %>%
+  mutate(total = sum(count),
+         proportion = count / total)
+
+Chloro_Clade_pie_data <- Chloro_Clade_summary %>%
+  pivot_wider(names_from = Chloro_clade, values_from = proportion, values_fill = 0)
+
+Chloro_Clade_pie_data <- Chloro_Clade_pie_data %>%
+  rename( latitude = `collection.latitude`, longitude = `collection.longitude`)
+```
+
+```{r Pie chart plots Chloro}
+
+Chloro_Clade_pie_NAdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_Clade_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_Clade_pie_data)[5:ncol(Chloro_Clade_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.1, 
+                  color = NA) +  # Adjust pie size
+scale_fill_manual(values = C_CLADE_colors) +
+  labs(title = "Chloroplast Phylogenetic Clade Distribution, North America",
+       x = "Longitude", y = "Latitude", fill = "Clade") +
+  coord_sf(xlim = c(-110, -65), ylim = c(24, 50)) + # Focus on the USA
+  theme_minimal()
+print(Chloro_Clade_pie_NAdata_plot)
+
+Chloro_Clade_pie_EUdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_Clade_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_Clade_pie_data)[5:ncol(Chloro_Clade_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.1, 
+                  color = NA) +  # Adjust pie size
+ scale_fill_manual(values = C_CLADE_colors) +
+  labs(title = "Chloroplast Phylogenetic Clade Distribution, Europe",
+       x = "Longitude", y = "Latitude", fill = "Clade") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) + # Focus on the eu
+  theme_minimal()
+print(Chloro_Clade_pie_EUdata_plot)
+
+Chloro_Clade_pie_AUSdata_plot <- ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") +  # Background world map
+  geom_scatterpie(data = Chloro_Clade_pie_data, 
+                  aes(x = longitude, y = latitude ),
+                  cols = colnames(Chloro_Clade_pie_data)[5:ncol(Chloro_Clade_pie_data)],  # Specify the cluster columns
+                  pie_scale = 0.08, 
+                  color = NA) +  # Adjust pie size
+  scale_fill_manual(values = C_CLADE_colors) +
+  labs(title = "Chloroplast Phylogenetic Clade Distribution, Australia",
+       x = "Longitude", y = "Latitude", fill = "Clade") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + # Focus on the eu
+  theme_minimal()
+print(Chloro_Clade_pie_AUSdata_plot)
+```
+
+```{r Mito Jitter}
+
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scatterpie)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+
+Jitter_M_CLADE_NA_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Mito1_tip_metadata, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Mito_clade),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  #scale_color_brewer(palette = "Set1") +  # Customize color palette
+  scale_color_manual(values = c("MT3" = "#E41A1C",   # Red for MNAm1
+                                "MT2" = "#377EB8",   # Blue for MNAm2
+                                "MT6" = "#4DAF4A",   # Green for MNAm3
+                                "MT5" = "#FF7F00",   # Blue for MNAm2
+                                "MT1" = "#F781BF",   # Green for MNAm3
+                                "MT4" = "#984EA3")) +
+  labs(title = "Mitochondrion Clade Distribution, North America",
+       x = "Longitude", y = "Latitude", color = "Clade ") +
+  coord_sf(xlim = c(-110, -60), ylim = c(24, 55)) +
+  theme_minimal()
+print(Jitter_M_CLADE_NA_plot)
+#EU
+
+Jitter_M_CLADE_EU_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Mito1_tip_metadata, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Mito_clade),
+              width = 0.5, height = 0.5, size = 1.5, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_manual(values = c("MT3" = "#E41A1C",   # Red for MNAm1
+                                "MT2" = "#377EB8",   # Blue for MNAm2
+                                "MT6" = "#4DAF4A",   # Green for MNAm3
+                                "MT5" = "#FF7F00",   # Blue for MNAm2
+                                "MT1" = "#F781BF",   # Green for MNAm3
+                                "MT4" = "#984EA3")) +  # Customize color palette
+  labs(title = "Mitochondrion Clade Distribution, Europe",
+       x = "Longitude", y = "Latitude", color = "Clade") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) +
+  theme_minimal()
+print(Jitter_M_CLADE_EU_plot)
+
+#AUS
+
+Jitter_M_CLADE_AUS_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Mito1_tip_metadata, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Mito_clade),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_manual(values = c("MT3" = "#E41A1C",   # Red for MNAm1
+                                "MT2" = "#377EB8",   # Blue for MNAm2
+                                "MT6" = "#4DAF4A",   # Green for MNAm3
+                                "MT5" = "#FF7F00",   # Blue for MNAm2
+                                "MT1" = "#F781BF",   # Green for MNAm3
+                                "MT4" = "#984EA3")) +  # Customize color palette
+  labs(title = "Mitochondrion Clade Distribution, Australia",
+       x = "Longitude", y = "Latitude", color = "Clade") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + 
+  theme_minimal()
+print(Jitter_M_CLADE_AUS_plot)
+
+
+```
+
+```{r Chloro}
+Jitter_C_CLADE_NA_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Chloro1_tip_metadata, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Chloro_clade),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  #scale_color_brewer(palette = "Set1") +  # Customize color palette
+  scale_color_manual(values = c("CL5" = "#E41A1C",   # Red for MNAm1
+                                "CL6" = "#377EB8",   # Blue for MNAm2
+                                "CL4" = "#4DAF4A",   # Green for MNAm3
+                                "CL3" = "#FF7F00",   # Blue for MNAm2
+                                "CL2" = "#F781BF",   # Green for MNAm3
+                                "CL1" = "#984EA3")) +
+  labs(title = "Chloroplast Clade Distribution, North America",
+       x = "Longitude", y = "Latitude", color = "Clade ") +
+  coord_sf(xlim = c(-110, -60), ylim = c(24, 55)) +
+  theme_minimal()
+print(Jitter_C_CLADE_NA_plot)
+#EU
+
+Jitter_C_CLADE_EU_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Chloro1_tip_metadata, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Chloro_clade),
+              width = 0.5, height = 0.5, size = 1.5, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_manual(values = c("CL5" = "#E41A1C",   # Red for MNAm1
+                                "CL6" = "#377EB8",   # Blue for MNAm2
+                                "CL4" = "#4DAF4A",   # Green for MNAm3
+                                "CL3" = "#FF7F00",   # Blue for MNAm2
+                                "CL2" = "#F781BF",   # Green for MNAm3
+                                "CL1" = "#984EA3")) +  # Customize color palette
+  labs(title = "Chloroplast Clade Distribution, Europe",
+       x = "Longitude", y = "Latitude", color = "Clade") +
+  coord_sf(xlim = c(-5, 31), ylim = c(40, 60)) +
+  theme_minimal()
+print(Jitter_C_CLADE_EU_plot)
+
+#AUS
+
+Jitter_C_CLADE_AUS_plot=ggplot() +
+  geom_sf(data = world, fill = "gray90", color = "gray80") + # World map as background
+  geom_jitter(data = Chloro1_tip_metadata, 
+              aes(x = `collection.longitude`, y = `collection.latitude`, color = Chloro_clade),
+              width = 0.5, height = 0.5, size = 1.2, alpha = 0.7) +
+  #geom_point(data = MapHaploidChloroNAPCACluster, 
+          #   aes(x = `collection longitude`, y = `collection latitude`, color = Organelle_Cluster),
+            # size = 3, alpha = 0.7) +  # Plot points with cluster color
+  scale_color_manual(values = c("CL5" = "#E41A1C",   # Red for MNAm1
+                                "CL6" = "#377EB8",   # Blue for MNAm2
+                                "CL4" = "#4DAF4A",   # Green for MNAm3
+                                "CL3" = "#FF7F00",   # Blue for MNAm2
+                                "CL2" = "#F781BF",   # Green for MNAm3
+                                "CL1" = "#984EA3")) +  # Customize color palette
+  labs(title = "Chloroplast Clade Distribution, Australia",
+       x = "Longitude", y = "Latitude", color = "Clade") +
+  coord_sf(xlim = c(145, 155), ylim = c(-40, -22)) + 
+  theme_minimal()
+print(Jitter_C_CLADE_AUS_plot)
+
+```
+
+
+
+
+
+```{r "PDF"}
+library(gridExtra)
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+
+pdf(file = "JitterCLADESMaps.pdf",
+  width = 16,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Jitter_C_CLADE_NA_plot, Jitter_M_CLADE_NA_plot, Jitter_C_CLADE_EU_plot, Jitter_M_CLADE_EU_plot, Jitter_C_CLADE_AUS_plot, Jitter_M_CLADE_AUS_plot,  nrow = 3)
+dev.off()
+
+```
+```{r "PDF"}
+library(gridExtra)
+setwd("C:/Users/test/Documents/R vaje/Organeli Žvrklje/pdfs/")
+
+
+
+pdf(file = "PiechartCLADESMaps.pdf",
+  width = 16,
+  height = 20,
+  useDingbats=FALSE)
+grid.arrange(Chloro_Clade_pie_NAdata_plot, Mito_Clade_pie_NAdata_plot, Chloro_Clade_pie_EUdata_plot, Mito_Clade_pie_EUdata_plot, Chloro_Clade_pie_AUSdata_plot, Mito_Clade_pie_AUSdata_plot,  nrow = 3)
+dev.off()
+
+```
